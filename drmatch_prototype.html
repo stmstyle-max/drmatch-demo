@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Dr.match by STM</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:#0B0F1E;color:#fff;font-family:'Inter',sans-serif;overflow:hidden;user-select:none}
+
+/* ── APP SHELL ── */
+.app{width:100%;max-width:430px;height:100%;margin:0 auto;position:relative;overflow:hidden}
+
+/* ── SCREENS ── */
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .35s ease,transform .35s ease;transform:translateX(30px)}
+.screen.active{opacity:1;pointer-events:all;transform:translateX(0)}
+.screen.exit{opacity:0;transform:translateX(-30px)}
+
+/* ── SPLASH ── */
+#splash{background:linear-gradient(160deg,#0B0F1E 0%,#111830 100%);align-items:center;justify-content:center;gap:0}
+.splash-logo{font-size:38px;font-weight:600;letter-spacing:-.02em;color:#fff;margin-bottom:6px}
+.splash-logo span{color:#B8952A}
+.splash-tagline{font-size:13px;color:rgba(255,255,255,.45);letter-spacing:.08em;text-transform:uppercase;margin-bottom:60px}
+.splash-btn{background:#B8952A;color:#fff;border:none;padding:15px 48px;font-family:'Inter',sans-serif;font-size:15px;font-weight:600;letter-spacing:.06em;cursor:pointer;border-radius:2px}
+.splash-sub{font-size:11px;color:rgba(255,255,255,.25);margin-top:14px;letter-spacing:.04em}
+
+/* ── COUNTRY ── */
+#country{padding:48px 28px 32px;justify-content:center}
+.screen-eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#B8952A;margin-bottom:16px;text-align:center}
+.screen-title{font-size:24px;font-weight:500;text-align:center;margin-bottom:8px;line-height:1.3}
+.screen-sub{font-size:13px;color:rgba(255,255,255,.4);text-align:center;margin-bottom:36px}
+.country-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.country-btn{background:#141828;border:1px solid rgba(255,255,255,.08);padding:16px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all .2s;border-radius:4px}
+.country-btn:active{transform:scale(.97)}
+.country-btn.selected{border-color:#B8952A;background:rgba(184,149,42,.08)}
+.country-flag{font-size:22px}
+.country-name{font-size:14px;font-weight:500;color:rgba(255,255,255,.85)}
+
+/* ── STEP SCREEN ── */
+.step-screen{padding:0;flex-direction:column}
+
+/* TOP BAR */
+.top-bar{padding:52px 24px 16px;flex-shrink:0}
+.progress-track{height:3px;background:rgba(255,255,255,.08);border-radius:2px;margin-bottom:10px;overflow:hidden}
+.progress-fill{height:100%;background:#B8952A;border-radius:2px;transition:width .5s ease}
+.step-info{display:flex;justify-content:space-between;align-items:center}
+.step-num{font-size:12px;color:#B8952A;font-weight:600;letter-spacing:.08em}
+.step-accuracy{font-size:12px;color:rgba(255,255,255,.35)}
+
+/* QUESTION AREA */
+.q-area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 28px 20px;text-align:center}
+.q-label{font-size:12px;color:rgba(255,255,255,.4);letter-spacing:.1em;text-transform:uppercase;margin-bottom:16px}
+.q-text{font-size:clamp(22px,6vw,30px);font-weight:500;line-height:1.3;margin-bottom:0;color:#fff}
+
+/* FEEDBACK LINE */
+.feedback-line{min-height:36px;padding:0 28px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.feedback-text{font-size:13px;color:#4ADE80;text-align:center;opacity:0;transition:opacity .3s;line-height:1.5}
+.feedback-text.show{opacity:1}
+
+/* CHOICES */
+.choices-area{padding:0 20px 40px;flex-shrink:0}
+.choices-grid{display:grid;gap:10px}
+.choices-grid.grid-2{grid-template-columns:1fr 1fr}
+.choices-grid.grid-1{grid-template-columns:1fr}
+.choice-btn{background:#141828;border:1px solid rgba(255,255,255,.1);padding:16px 14px;font-family:'Inter',sans-serif;font-size:14px;font-weight:400;color:rgba(255,255,255,.85);cursor:pointer;transition:all .25s;border-radius:6px;text-align:center;line-height:1.4}
+.choice-btn:active{transform:scale(.97)}
+.choice-btn.selected{border-color:#B8952A;background:rgba(184,149,42,.1);color:#fff}
+.choice-btn.correct{border-color:#4ADE80;background:rgba(74,222,128,.08);color:#4ADE80}
+
+/* ACCURACY BADGE */
+.accuracy-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(184,149,42,.12);border:1px solid rgba(184,149,42,.3);padding:4px 10px;border-radius:20px;font-size:11px;color:#B8952A;font-weight:600;transition:all .4s}
+
+/* ANALYZING */
+#analyzing{align-items:center;justify-content:center;gap:0}
+.analyzing-ring{width:80px;height:80px;border:2px solid rgba(184,149,42,.2);border-top-color:#B8952A;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:24px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.analyzing-title{font-size:22px;font-weight:500;margin-bottom:8px;text-align:center}
+.analyzing-sub{font-size:13px;color:rgba(255,255,255,.4);margin-bottom:32px;text-align:center}
+.analyzing-steps{display:flex;flex-direction:column;gap:8px;width:100%;max-width:280px}
+.a-step{font-size:12px;color:rgba(255,255,255,.3);display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.a-step.done{color:rgba(255,255,255,.7)}
+.a-step.done::before{content:'✓';color:#4ADE80;font-weight:600}
+.a-step:not(.done)::before{content:'○';color:rgba(255,255,255,.2)}
+
+/* RESULT */
+#result{padding:48px 24px 32px;overflow-y:auto}
+.result-header{text-align:center;margin-bottom:28px}
+.result-eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#B8952A;margin-bottom:10px}
+.result-title{font-size:26px;font-weight:500;margin-bottom:6px;line-height:1.3}
+.result-sub{font-size:13px;color:rgba(255,255,255,.4)}
+
+.doctor-cards{display:flex;flex-direction:column;gap:12px;margin-bottom:24px}
+.doctor-card{background:#141828;border:1px solid rgba(255,255,255,.08);padding:16px;border-radius:6px;display:flex;gap:14px;align-items:flex-start;cursor:pointer;transition:all .2s}
+.doctor-card:first-child{border-color:#B8952A}
+.doctor-card:active{transform:scale(.98)}
+.doctor-rank{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.rank-1{background:#B8952A;color:#fff}
+.rank-2{background:#1a2035;color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.15)}
+.rank-3{background:#1a2035;color:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.1)}
+.doctor-info{flex:1}
+.doctor-name{font-size:15px;font-weight:600;color:#fff;margin-bottom:2px}
+.doctor-clinic{font-size:12px;color:rgba(255,255,255,.4);margin-bottom:8px}
+.doctor-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
+.dtag{font-size:10px;padding:3px 8px;background:rgba(255,255,255,.06);color:rgba(255,255,255,.6);border-radius:20px}
+.match-bar-wrap{display:flex;align-items:center;gap:8px}
+.match-bar{flex:1;height:4px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden}
+.match-fill{height:100%;background:#B8952A;border-radius:2px;transition:width 1s ease}
+.match-pct{font-size:12px;color:#B8952A;font-weight:600;width:34px;text-align:right;flex-shrink:0}
+
+.result-cta{background:#B8952A;border:none;width:100%;padding:16px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;color:#fff;cursor:pointer;border-radius:4px;letter-spacing:.06em;margin-bottom:10px}
+.result-cta-sub{text-align:center;font-size:12px;color:rgba(255,255,255,.3)}
+
+/* BACK BTN */
+.back-btn{position:absolute;top:52px;left:16px;background:none;border:none;color:rgba(255,255,255,.4);font-size:20px;cursor:pointer;padding:4px;z-index:10;line-height:1}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ══ SPLASH ══ -->
+<div class="screen active" id="splash">
+  <div class="splash-logo">Dr.<span>match</span></div>
+  <div class="splash-tagline">by STM · Bangkok</div>
+  <button class="splash-btn" onclick="goto('country')">시작하기</button>
+  <div class="splash-sub">AI가 나에게 맞는 의사를 찾아드립니다</div>
+</div>
+
+<!-- ══ COUNTRY ══ -->
+<div class="screen" id="country">
+  <div class="screen-eyebrow">Step 0 / 5</div>
+  <div class="screen-title">어느 나라에서<br>오시나요?</div>
+  <div class="screen-sub">맞춤 의사를 추천해드립니다</div>
+  <div class="country-grid">
+    <div class="country-btn" onclick="selectCountry(this,'🇹🇭','태국')"><span class="country-flag">🇹🇭</span><span class="country-name">태국</span></div>
+    <div class="country-btn" onclick="selectCountry(this,'🇦🇺','호주')"><span class="country-flag">🇦🇺</span><span class="country-name">호주</span></div>
+    <div class="country-btn" onclick="selectCountry(this,'🇬🇧','영국')"><span class="country-flag">🇬🇧</span><span class="country-name">영국</span></div>
+    <div class="country-btn" onclick="selectCountry(this,'🇸🇦','중동')"><span class="country-flag">🇸🇦</span><span class="country-name">중동</span></div>
+    <div class="country-btn" onclick="selectCountry(this,'🇯🇵','일본')"><span class="country-flag">🇯🇵</span><span class="country-name">일본</span></div>
+    <div class="country-btn" onclick="selectCountry(this,'🌏','기타')"><span class="country-flag">🌏</span><span class="country-name">기타</span></div>
+  </div>
+</div>
+
+<!-- ══ STEP 1 ══ -->
+<div class="screen step-screen" id="step1">
+  <button class="back-btn" onclick="goBack()">‹</button>
+  <div class="top-bar">
+    <div class="progress-track"><div class="progress-fill" style="width:20%"></div></div>
+    <div class="step-info">
+      <span class="step-num">STEP 1 / 5</span>
+      <span class="accuracy-badge" id="acc1">AI 분석중 <span id="acc1-val">—</span></span>
+    </div>
+  </div>
+  <div class="q-area">
+    <div class="q-label">원하는 시술</div>
+    <div class="q-text">어떤 수술을 원하시나요?</div>
+  </div>
+  <div class="feedback-line"><div class="feedback-text" id="fb1"></div></div>
+  <div class="choices-area">
+    <div class="choices-grid grid-2">
+      <button class="choice-btn" onclick="choose(1,'눈 수술','눈 수술을 선호하는 것으로 분석했습니다','step2')">👁 눈</button>
+      <button class="choice-btn" onclick="choose(1,'코 수술','코 수술을 선호하는 것으로 분석했습니다','step2')">👃 코</button>
+      <button class="choice-btn" onclick="choose(1,'지방분해·바디','지방분해 및 바디케어를 선호하는 것으로 분석했습니다','step2')">✨ 지방분해·바디</button>
+      <button class="choice-btn" onclick="choose(1,'리프팅·피부','리프팅 및 피부관리를 선호하는 것으로 분석했습니다','step2')">💎 리프팅·피부</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STEP 2 ══ -->
+<div class="screen step-screen" id="step2">
+  <button class="back-btn" onclick="goBack()">‹</button>
+  <div class="top-bar">
+    <div class="progress-track"><div class="progress-fill" style="width:40%"></div></div>
+    <div class="step-info">
+      <span class="step-num">STEP 2 / 5</span>
+      <span class="accuracy-badge" id="acc2">AI 분석 <span id="acc2-val">42%</span></span>
+    </div>
+  </div>
+  <div class="q-area">
+    <div class="q-label">가장 중요한 것</div>
+    <div class="q-text">수술에서 가장 중요하게 생각하는 것은?</div>
+  </div>
+  <div class="feedback-line"><div class="feedback-text" id="fb2"></div></div>
+  <div class="choices-area">
+    <div class="choices-grid grid-2">
+      <button class="choice-btn" onclick="choose(2,'자연스러움','자연스러운 스타일을 선호하는 것으로 분석했습니다','step3')">🌿 자연스러움</button>
+      <button class="choice-btn" onclick="choose(2,'확실한 변화','확실한 변화를 원하는 것으로 분석했습니다','step3')">⚡ 확실한 변화</button>
+      <button class="choice-btn" onclick="choose(2,'빠른 회복','회복 기간을 중요하게 생각하는 것으로 분석했습니다','step3')">🏃 빠른 회복</button>
+      <button class="choice-btn" onclick="choose(2,'재수술 전문','재수술 전문 의사를 원하는 것으로 분석했습니다','step3')">🔬 재수술 전문</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STEP 3 ══ -->
+<div class="screen step-screen" id="step3">
+  <button class="back-btn" onclick="goBack()">‹</button>
+  <div class="top-bar">
+    <div class="progress-track"><div class="progress-fill" style="width:60%"></div></div>
+    <div class="step-info">
+      <span class="step-num">STEP 3 / 5</span>
+      <span class="accuracy-badge" id="acc3">AI 분석 <span id="acc3-val">64%</span></span>
+    </div>
+  </div>
+  <div class="q-area">
+    <div class="q-label">예산</div>
+    <div class="q-text">예산 범위는 어떻게 되시나요?</div>
+  </div>
+  <div class="feedback-line"><div class="feedback-text" id="fb3"></div></div>
+  <div class="choices-area">
+    <div class="choices-grid grid-1">
+      <button class="choice-btn" onclick="choose(3,'200만원 이하','예산 범위를 분석했습니다','step4')">💰 200만원 이하</button>
+      <button class="choice-btn" onclick="choose(3,'200~400만원','예산 범위를 분석했습니다','step4')">💰💰 200 ~ 400만원</button>
+      <button class="choice-btn" onclick="choose(3,'400만원 이상','예산 제한 없음으로 분석했습니다','step4')">💎 400만원 이상 · 상관없음</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STEP 4 ══ -->
+<div class="screen step-screen" id="step4">
+  <button class="back-btn" onclick="goBack()">‹</button>
+  <div class="top-bar">
+    <div class="progress-track"><div class="progress-fill" style="width:80%"></div></div>
+    <div class="step-info">
+      <span class="step-num">STEP 4 / 5</span>
+      <span class="accuracy-badge" id="acc4">AI 분석 <span id="acc4-val">78%</span></span>
+    </div>
+  </div>
+  <div class="q-area">
+    <div class="q-label">한국 방문 일정</div>
+    <div class="q-text">한국에 머무를 수 있는 기간은?</div>
+  </div>
+  <div class="feedback-line"><div class="feedback-text" id="fb4"></div></div>
+  <div class="choices-area">
+    <div class="choices-grid grid-2">
+      <button class="choice-btn" onclick="choose(4,'3~4일','단기 방문 일정으로 분석했습니다','step5')">✈️ 3~4일</button>
+      <button class="choice-btn" onclick="choose(4,'5~7일','적정 방문 일정으로 분석했습니다','step5')">🗓 5~7일</button>
+      <button class="choice-btn" onclick="choose(4,'2주 이상','충분한 방문 기간으로 분석했습니다','step5')">🏨 2주 이상</button>
+      <button class="choice-btn" onclick="choose(4,'미정','일정은 추후 협의로 분석했습니다','step5')">🤔 미정</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STEP 5 ══ -->
+<div class="screen step-screen" id="step5">
+  <button class="back-btn" onclick="goBack()">‹</button>
+  <div class="top-bar">
+    <div class="progress-track"><div class="progress-fill" style="width:100%"></div></div>
+    <div class="step-info">
+      <span class="step-num">STEP 5 / 5</span>
+      <span class="accuracy-badge" id="acc5">AI 분석 <span id="acc5-val">89%</span></span>
+    </div>
+  </div>
+  <div class="q-area">
+    <div class="q-label">수술 시기</div>
+    <div class="q-text">언제 수술을 받고 싶으신가요?</div>
+  </div>
+  <div class="feedback-line"><div class="feedback-text" id="fb5"></div></div>
+  <div class="choices-area">
+    <div class="choices-grid grid-2">
+      <button class="choice-btn" onclick="choose(5,'이번달','빠른 일정으로 분석했습니다','analyzing')">⚡ 이번달</button>
+      <button class="choice-btn" onclick="choose(5,'1~3개월','3개월 내 일정으로 분석했습니다','analyzing')">📅 1~3개월</button>
+      <button class="choice-btn" onclick="choose(5,'6개월 이내','6개월 내 일정으로 분석했습니다','analyzing')">🗓 6개월 이내</button>
+      <button class="choice-btn" onclick="choose(5,'아직 고민중','신중하게 검토중인 것으로 분석했습니다','analyzing')">🤔 아직 고민중</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ANALYZING ══ -->
+<div class="screen" id="analyzing" style="align-items:center;justify-content:center;padding:32px">
+  <div class="analyzing-ring"></div>
+  <div class="analyzing-title">AI 분석 중</div>
+  <div class="analyzing-sub">나에게 맞는 의사를 찾고 있습니다</div>
+  <div class="analyzing-steps" id="aSteps">
+    <div class="a-step" id="as1">선택 데이터 분석</div>
+    <div class="a-step" id="as2">STM 검증 의사 DB 검색</div>
+    <div class="a-step" id="as3">전문분야 매칭</div>
+    <div class="a-step" id="as4">스타일 및 예산 필터링</div>
+    <div class="a-step" id="as5">최적 의사 3명 선정</div>
+  </div>
+</div>
+
+<!-- ══ RESULT ══ -->
+<div class="screen" id="result">
+  <div class="result-header">
+    <div class="result-eyebrow">AI 매칭 완료</div>
+    <div class="result-title">가장 적합한 의사<br>3명을 찾았습니다</div>
+    <div class="result-sub" id="result-summary"></div>
+  </div>
+
+  <div class="doctor-cards">
+    <div class="doctor-card" onclick="alert('의사 상세 페이지 — 준비 중')">
+      <div class="doctor-rank rank-1">1</div>
+      <div class="doctor-info">
+        <div class="doctor-name" id="doc1-name">손유나 원장</div>
+        <div class="doctor-clinic" id="doc1-clinic">닥터손유나의원 · 서울 강남</div>
+        <div class="doctor-tags" id="doc1-tags">
+          <span class="dtag">C.A.T 지방분해</span>
+          <span class="dtag">21년 경력</span>
+          <span class="dtag">STM 검증</span>
+        </div>
+        <div class="match-bar-wrap">
+          <div class="match-bar"><div class="match-fill" id="mf1" style="width:0%"></div></div>
+          <div class="match-pct" id="mp1">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="doctor-card" onclick="alert('의사 상세 페이지 — 준비 중')">
+      <div class="doctor-rank rank-2">2</div>
+      <div class="doctor-info">
+        <div class="doctor-name" id="doc2-name">이승호 원장</div>
+        <div class="doctor-clinic" id="doc2-clinic">BT성형외과 · 서울 강남</div>
+        <div class="doctor-tags" id="doc2-tags">
+          <span class="dtag">자가늑연골</span>
+          <span class="dtag">코 재수술</span>
+          <span class="dtag">STM 검증</span>
+        </div>
+        <div class="match-bar-wrap">
+          <div class="match-bar"><div class="match-fill" id="mf2" style="width:0%"></div></div>
+          <div class="match-pct" id="mp2">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="doctor-card" onclick="alert('의사 상세 페이지 — 준비 중')">
+      <div class="doctor-rank rank-3">3</div>
+      <div class="doctor-info">
+        <div class="doctor-name" id="doc3-name">최은규 원장</div>
+        <div class="doctor-clinic" id="doc3-clinic">어반성형외과 · 서울 강남</div>
+        <div class="doctor-tags" id="doc3-tags">
+          <span class="dtag">22년 경력</span>
+          <span class="dtag">자연스러운 코</span>
+          <span class="dtag">STM 검증</span>
+        </div>
+        <div class="match-bar-wrap">
+          <div class="match-bar"><div class="match-fill" id="mf3" style="width:0%"></div></div>
+          <div class="match-pct" id="mp3">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="result-cta" onclick="alert('STM Bangkok 상담 연결 — 준비 중')">📱 무료 상담 신청하기</button>
+  <div class="result-cta-sub">STM 방콕 오피스에서 직접 연결해드립니다</div>
+</div>
+
+</div><!-- /app -->
+
+<script>
+// ─── State ───
+let history = [];
+let answers = {};
+
+// ─── Navigation ───
+function goto(id) {
+  const cur = document.querySelector('.screen.active');
+  if (cur) { cur.classList.add('exit'); setTimeout(()=>cur.classList.remove('active','exit'),350); }
+  history.push(id);
+  const next = document.getElementById(id);
+  setTimeout(()=>{ next.classList.add('active'); }, 50);
+  if (id === 'analyzing') startAnalyzing();
+  if (id === 'result') showResult();
+}
+
+function goBack() {
+  if (history.length <= 1) return;
+  const cur = document.querySelector('.screen.active');
+  cur.classList.remove('active');
+  history.pop();
+  const prev = document.getElementById(history[history.length-1]);
+  prev.classList.add('active');
+}
+
+// ─── Country ───
+function selectCountry(el, flag, name) {
+  document.querySelectorAll('.country-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+  answers.country = name;
+  setTimeout(()=>goto('step1'), 300);
+}
+
+// ─── Choice ───
+const accuracies = [null, 42, 64, 78, 89, 95];
+
+function choose(step, value, feedback, next) {
+  answers['step'+step] = value;
+
+  // highlight chosen
+  const screen = document.getElementById('step'+step);
+  screen.querySelectorAll('.choice-btn').forEach(b=>{
+    b.classList.remove('selected','correct');
+    if (b.textContent.includes(value.replace(/[🌿⚡🏃🔬💰💎✈️🗓🏨🤔⚡📅]/g,'').trim())) {
+      b.classList.add('correct');
+    }
+  });
+
+  // feedback
+  const fb = document.getElementById('fb'+step);
+  fb.textContent = '✓ ' + feedback;
+  fb.classList.add('show');
+
+  // accuracy badge
+  if (step < 5) {
+    const nextAcc = accuracies[step+1];
+    const acc = document.getElementById('acc'+step);
+    if (acc) {
+      const val = document.getElementById('acc'+step+'-val');
+      if (val) { val.textContent = nextAcc + '%'; }
+    }
+  }
+
+  // go next after short delay
+  setTimeout(()=>{
+    fb.classList.remove('show');
+    goto(next);
+  }, 900);
+}
+
+// ─── Analyzing ───
+function startAnalyzing() {
+  const steps = ['as1','as2','as3','as4','as5'];
+  steps.forEach((id,i)=>{
+    setTimeout(()=>{
+      document.getElementById(id).classList.add('done');
+      if (i===steps.length-1) {
+        setTimeout(()=>goto('result'), 600);
+      }
+    }, 500 + i*600);
+  });
+}
+
+// ─── Result ───
+function showResult() {
+  const surgery = answers.step1 || '선택한 시술';
+  const style = answers.step2 || '선택한 기준';
+  document.getElementById('result-summary').textContent =
+    surgery + ' · ' + style + ' 기준으로 매칭했습니다';
+
+  // match bars animate
+  const pcts = [95, 88, 82];
+  pcts.forEach((p, i) => {
+    setTimeout(()=>{
+      document.getElementById('mf'+(i+1)).style.width = p+'%';
+      document.getElementById('mp'+(i+1)).textContent = p+'%';
+    }, 300 + i*200);
+  });
+
+  // scroll to top
+  document.getElementById('result').scrollTop = 0;
+}
+</script>
+</body>
+</html>
