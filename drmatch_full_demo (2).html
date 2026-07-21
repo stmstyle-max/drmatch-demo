@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Dr.match by STM</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@200;300;400;500;600&display=swap');
+
+:root {
+  --ink: #0A0A0A;
+  --gold: #C4963A;
+  --gold-light: #E8C97A;
+  --gold-pale: rgba(196,150,58,.12);
+  --navy: #0D1B2A;
+  --navy-mid: #162336;
+  --paper: #F8F6F0;
+  --rule: rgba(196,150,58,.2);
+  --rose: #C4896A;
+  --rose-dark: #8A4A30;
+  --vvip-bg: #080808;
+  --vvip-gold: #D4A853;
+  --vvip-rose: #B87355;
+  --white: #FFFFFF;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif}
+.app{width:100%;max-width:430px;height:100%;margin:0 auto;position:relative;overflow:hidden;background:var(--navy)}
+
+/* SCREENS */
+.screen{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .5s ease,transform .5s ease;transform:translateX(40px);overflow-y:auto;overflow-x:hidden}
+.screen.active{opacity:1;pointer-events:all;transform:translateX(0)}
+.screen.exit{opacity:0;transform:translateX(-40px)}
+
+/* PROGRESS */
+.prog{position:fixed;top:0;left:0;right:0;max-width:430px;margin:0 auto;height:1.5px;background:rgba(196,150,58,.15);z-index:200}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-light));transition:width .6s ease}
+
+/* LANG */
+.lang-bar{position:fixed;top:12px;right:14px;display:flex;gap:4px;z-index:300}
+.lb{border:none;padding:4px 10px;font-family:'Inter',sans-serif;font-size:10px;font-weight:500;cursor:pointer;transition:all .25s;letter-spacing:.08em;background:rgba(255,255,255,.06);color:rgba(255,255,255,.35)}
+.lb.active{background:var(--gold);color:#000}
+
+/* NAV */
+.nav-btn{position:fixed;z-index:200;border:none;cursor:pointer;font-family:'Inter',sans-serif;font-weight:600;font-size:10px;letter-spacing:.12em;text-transform:uppercase;transition:all .25s}
+.n-next{bottom:32px;right:16px;background:var(--gold);color:#000;padding:12px 22px}
+.n-prev{bottom:32px;left:16px;background:rgba(255,255,255,.06);color:rgba(255,255,255,.4);padding:12px 16px}
+.n-prev.hide{display:none}
+
+/* DOTS */
+.dots{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:200}
+.dot{width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,.15);transition:all .3s}
+.dot.active{background:var(--gold);width:14px;border-radius:2px}
+
+/* ── SPLASH ── */
+#s0{background:var(--navy);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.splash-bg{position:absolute;inset:0;overflow:hidden}
+.splash-circle{position:absolute;border-radius:50%;background:radial-gradient(circle,rgba(196,150,58,.08),transparent 70%)}
+.splash-c1{width:600px;height:600px;top:-200px;left:-100px}
+.splash-c2{width:400px;height:400px;bottom:-100px;right:-100px}
+.splash-content{position:relative;z-index:1;text-align:center;padding:40px 28px}
+.splash-eyebrow{font-size:10px;letter-spacing:.28em;color:rgba(196,150,58,.6);text-transform:uppercase;margin-bottom:32px;font-weight:400}
+.splash-logo{font-family:'Cormorant Garamond',serif;font-size:52px;font-weight:300;color:#fff;line-height:1;margin-bottom:6px;letter-spacing:-.02em}
+.splash-logo span{color:var(--gold)}
+.splash-by{font-size:11px;letter-spacing:.18em;color:rgba(255,255,255,.3);text-transform:uppercase;margin-bottom:48px}
+.splash-line{width:40px;height:1px;background:var(--gold);margin:0 auto 48px}
+.splash-desc{font-family:'Cormorant Garamond',serif;font-size:18px;color:rgba(255,255,255,.5);font-weight:300;line-height:1.6;font-style:italic;margin-bottom:52px}
+.splash-start{background:none;border:1px solid var(--gold);color:var(--gold);padding:14px 36px;font-family:'Inter',sans-serif;font-size:11px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;transition:all .3s;display:block;margin:0 auto}
+.splash-start:hover{background:var(--gold);color:#000}
+.splash-vvip-hint{margin-top:20px;font-size:10px;color:rgba(255,255,255,.2);letter-spacing:.1em;cursor:pointer;text-transform:uppercase}
+.splash-vvip-hint:hover{color:var(--rose)}
+
+/* ── LANG SELECT ── */
+#s1{background:var(--navy);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 28px}
+.lang-title{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:300;color:#fff;text-align:center;margin-bottom:6px}
+.lang-sub{font-size:12px;color:rgba(255,255,255,.35);text-align:center;margin-bottom:40px;letter-spacing:.06em}
+.lang-grid{display:flex;flex-direction:column;gap:10px;width:100%;max-width:300px}
+.lang-item{border:1px solid rgba(255,255,255,.08);padding:18px 22px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:all .25s}
+.lang-item:active{transform:scale(.98)}
+.lang-item.on{border-color:var(--gold)}
+.lang-item-left{display:flex;align-items:center;gap:14px}
+.lang-flag{font-size:22px}
+.lang-name{font-size:15px;font-weight:400;color:#fff}
+.lang-name-native{font-size:11px;color:rgba(255,255,255,.35);margin-top:2px}
+.lang-check{width:18px;height:18px;border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--gold);opacity:0;transition:opacity .2s}
+.lang-item.on .lang-check{opacity:1;border-color:var(--gold)}
+.lang-more{font-size:10px;color:rgba(255,255,255,.2);text-align:center;margin-top:14px;letter-spacing:.08em}
+
+/* ── COUNTRY ── */
+#s2{background:var(--navy);padding:52px 24px 80px}
+.sec-ey{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:12px;opacity:.7}
+.sec-h{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:300;color:#fff;margin-bottom:6px;line-height:1.2}
+.sec-s{font-size:13px;color:rgba(255,255,255,.38);margin-bottom:28px;line-height:1.6}
+.country-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.country-btn{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);padding:16px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all .22s}
+.country-btn.on{border-color:var(--gold);background:var(--gold-pale)}
+.country-btn:active{transform:scale(.97)}
+.c-flag{font-size:20px;flex-shrink:0}
+.c-name{font-size:13px;font-weight:400;color:rgba(255,255,255,.8)}
+
+/* ── TREATMENT ── */
+#s3{background:var(--navy);padding:52px 24px 80px}
+.treat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.treat-btn{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);padding:18px 14px;cursor:pointer;transition:all .22s;text-align:center}
+.treat-btn.on{border-color:var(--gold);background:var(--gold-pale)}
+.treat-btn:active{transform:scale(.97)}
+.t-icon{font-size:24px;margin-bottom:8px}
+.t-name{font-size:13px;color:rgba(255,255,255,.8);font-weight:400;line-height:1.4}
+
+/* ── MATCH ── */
+#s4{background:var(--navy);padding:52px 24px 80px}
+.match-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);padding:18px;margin-bottom:10px}
+.mc-label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:12px;opacity:.7}
+.mc-q{font-size:15px;color:#fff;font-weight:400;margin-bottom:14px;line-height:1.4}
+.mc-opts{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.mc-opt{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);padding:10px 12px;font-family:'Inter',sans-serif;font-size:12px;color:rgba(255,255,255,.7);cursor:pointer;transition:all .2s;text-align:center}
+.mc-opt.on{border-color:var(--gold);color:var(--gold);background:var(--gold-pale)}
+.mc-opt:active{transform:scale(.97)}
+
+/* CALENDAR */
+.cal-wrap{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);padding:16px}
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.cal-month{font-family:'Cormorant Garamond',serif;font-size:18px;color:#fff;font-weight:300}
+.cal-nav{background:none;border:none;color:rgba(255,255,255,.4);font-size:18px;cursor:pointer;padding:4px 8px}
+.cal-days-header{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:6px}
+.cal-day-name{font-size:9px;color:rgba(255,255,255,.3);text-align:center;letter-spacing:.06em;padding:4px 0}
+.cal-days{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-day{font-size:11px;color:rgba(255,255,255,.5);text-align:center;padding:7px 2px;cursor:pointer;transition:all .2s;border-radius:2px}
+.cal-day.today{color:var(--gold);font-weight:600}
+.cal-day.selected{background:var(--gold);color:#000;font-weight:600}
+.cal-day.other{color:rgba(255,255,255,.15)}
+.cal-day:hover:not(.other){background:rgba(196,150,58,.15)}
+
+/* ── ANALYZING ── */
+#s5{background:var(--navy);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 28px}
+.analyzing-ring{width:72px;height:72px;border:1.5px solid rgba(196,150,58,.2);border-top-color:var(--gold);border-radius:50%;animation:spin 1.2s linear infinite;margin-bottom:28px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.analyzing-h{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:300;color:#fff;text-align:center;margin-bottom:8px}
+.analyzing-s{font-size:12px;color:rgba(255,255,255,.38);text-align:center;margin-bottom:36px;line-height:1.6}
+.a-steps{display:flex;flex-direction:column;gap:6px;width:100%;max-width:280px}
+.a-step{font-size:12px;color:rgba(255,255,255,.25);display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.a-step.done{color:rgba(255,255,255,.65)}
+.a-step::before{content:'○';color:rgba(255,255,255,.15);flex-shrink:0;font-size:10px}
+.a-step.done::before{content:'✓';color:var(--gold)}
+.accuracy-bar{width:100%;max-width:280px;margin-top:24px}
+.acc-label{font-size:10px;color:rgba(255,255,255,.3);letter-spacing:.1em;margin-bottom:8px;text-transform:uppercase}
+.acc-track{height:2px;background:rgba(255,255,255,.08);overflow:hidden}
+.acc-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-light));width:0;transition:width .8s ease}
+.acc-pct{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--gold);margin-top:8px}
+
+/* ── RESULT ── */
+#s6{background:var(--navy);padding:52px 20px 80px}
+.result-intro{margin-bottom:20px}
+.result-count{font-family:'Cormorant Garamond',serif;font-size:13px;color:var(--gold);letter-spacing:.1em;margin-bottom:6px}
+.result-h{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;color:#fff;line-height:1.2;margin-bottom:4px}
+.result-s{font-size:12px;color:rgba(255,255,255,.38);line-height:1.6}
+.doctor-cards{display:flex;flex-direction:column;gap:10px}
+.doc-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);overflow:hidden;cursor:pointer;transition:all .22s}
+.doc-card:first-child{border-color:rgba(196,150,58,.4)}
+.doc-card:active{transform:scale(.99)}
+.doc-card-inner{display:flex;gap:0}
+.doc-rank-bar{width:32px;background:rgba(196,150,58,.08);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.doc-rank-num{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--gold);font-weight:300;writing-mode:vertical-rl}
+.doc-card:first-child .doc-rank-bar{background:rgba(196,150,58,.15)}
+.doc-content{flex:1;padding:14px}
+.doc-name{font-size:15px;font-weight:500;color:#fff;margin-bottom:2px}
+.doc-clinic{font-size:11px;color:rgba(255,255,255,.38);margin-bottom:10px}
+.doc-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
+.doc-tag{font-size:10px;padding:3px 8px;background:rgba(255,255,255,.05);color:rgba(255,255,255,.5);letter-spacing:.04em}
+.doc-tag.primary{background:var(--gold-pale);color:var(--gold);border:1px solid rgba(196,150,58,.25)}
+.doc-match{display:flex;align-items:center;gap:8px}
+.doc-match-bar{flex:1;height:2px;background:rgba(255,255,255,.08)}
+.doc-match-fill{height:100%;background:var(--gold);transition:width 1.2s ease}
+.doc-match-pct{font-size:12px;color:var(--gold);font-weight:600;width:32px;text-align:right;flex-shrink:0}
+
+/* ── DOCTOR PROFILE ── */
+#s7{background:var(--navy);padding:0 0 80px}
+.profile-hero{background:linear-gradient(160deg,var(--navy-mid),var(--navy));padding:52px 20px 24px;position:relative;overflow:hidden}
+.profile-hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse at top right,rgba(196,150,58,.06),transparent 60%)}
+.profile-photo-wrap{width:88px;height:112px;overflow:hidden;border:1px solid rgba(196,150,58,.3);margin-bottom:16px;flex-shrink:0;position:relative;z-index:1}
+.profile-photo-wrap img{width:100%;height:100%;object-fit:cover;object-position:top}
+.profile-hero-grid{display:flex;gap:18px;align-items:flex-start;position:relative;z-index:1}
+.profile-hero-text{}
+.profile-verified{display:inline-flex;align-items:center;gap:5px;font-size:10px;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;opacity:.8}
+.profile-verified::before{content:'✓';font-weight:700}
+.profile-name{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:400;color:#fff;line-height:1.1;margin-bottom:3px}
+.profile-name-en{font-size:12px;color:rgba(255,255,255,.35);font-style:italic;margin-bottom:8px}
+.profile-clinic{font-size:12px;color:rgba(255,255,255,.45);margin-bottom:12px}
+.profile-tags{display:flex;flex-wrap:wrap;gap:4px}
+.profile-tag{font-size:10px;padding:3px 9px;border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.5)}
+.profile-tag.sig{border-color:rgba(196,150,58,.35);color:var(--gold);background:var(--gold-pale)}
+.profile-body{padding:0 20px}
+.profile-section{padding:18px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.profile-section:last-child{border-bottom:none}
+.ps-label{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:12px;opacity:.7}
+.timeline{display:flex;flex-direction:column;gap:0}
+.tl-row{display:grid;grid-template-columns:60px 1fr;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.tl-row:last-child{border-bottom:none}
+.tl-year{font-size:11px;color:var(--gold);font-weight:500;opacity:.7;padding-top:2px}
+.tl-text{font-size:13px;color:rgba(255,255,255,.75);line-height:1.5}
+.treat-table{width:100%}
+.tr-row{display:flex;justify-content:space-between;align-items:flex-start;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.tr-row:last-child{border-bottom:none}
+.tr-name{font-size:13px;color:rgba(255,255,255,.75)}
+.tr-sub{font-size:11px;color:rgba(255,255,255,.3);margin-top:2px}
+.tr-price{font-size:13px;color:var(--gold);font-weight:500;text-align:right;flex-shrink:0}
+.verify-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid rgba(255,255,255,.07)}
+.v-box{padding:12px 6px;text-align:center;border-right:1px solid rgba(255,255,255,.06)}
+.v-box:last-child{border-right:none}
+.v-num{font-family:'Cormorant Garamond',serif;font-size:24px;color:var(--gold);font-weight:300}
+.v-txt{font-size:10px;color:rgba(255,255,255,.35);margin-top:4px;line-height:1.35}
+.verify-stamp{background:rgba(196,150,58,.06);border:1px solid rgba(196,150,58,.15);padding:12px 14px;display:flex;align-items:center;gap:10px;margin-top:10px}
+.vs-icon{font-size:14px;color:var(--gold);flex-shrink:0}
+.vs-text{font-size:11px;color:rgba(255,255,255,.5);line-height:1.5}
+.profile-cta{background:var(--gold);border:none;width:100%;padding:15px;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:#000;cursor:pointer;letter-spacing:.1em;text-transform:uppercase;margin-top:20px}
+
+/* ── CONSULTATION ── */
+#s8{background:var(--navy);padding:52px 20px 80px}
+.consult-steps{display:flex;flex-direction:column;gap:0;margin-bottom:20px}
+.cs-item{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.cs-item:last-child{border-bottom:none}
+.cs-num{width:28px;height:28px;border:1px solid var(--gold);color:var(--gold);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Cormorant Garamond',serif;font-size:16px}
+.cs-body{}
+.cs-title{font-size:14px;font-weight:500;color:#fff;margin-bottom:3px}
+.cs-desc{font-size:12px;color:rgba(255,255,255,.4);line-height:1.55}
+.cs-badge{display:inline-block;font-size:10px;padding:2px 8px;background:rgba(196,150,58,.1);color:var(--gold);border:1px solid rgba(196,150,58,.2);margin-top:5px;letter-spacing:.05em}
+.payment-box{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);padding:18px;margin-bottom:14px}
+.pb-label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:12px;opacity:.7}
+.pb-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.pb-row:last-child{border-bottom:none}
+.pb-name{font-size:13px;color:rgba(255,255,255,.65)}
+.pb-amount{font-size:13px;color:#fff;font-weight:500}
+.pay-btn{background:var(--gold);border:none;width:100%;padding:14px;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:#000;cursor:pointer;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
+.pay-sub{text-align:center;font-size:11px;color:rgba(255,255,255,.25);letter-spacing:.04em}
+
+/* ── CONCIERGE ── */
+#s9{background:var(--navy);padding:52px 20px 80px}
+.concierge-header{margin-bottom:24px}
+.concierge-grid{display:flex;flex-direction:column;gap:8px}
+.cg-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);padding:16px;display:flex;align-items:flex-start;gap:14px;cursor:pointer;transition:all .22s}
+.cg-card:active{transform:scale(.98)}
+.cg-card.active{border-color:rgba(196,150,58,.3);background:var(--gold-pale)}
+.cg-icon{font-size:22px;flex-shrink:0;width:32px;text-align:center}
+.cg-body{}
+.cg-title{font-size:14px;font-weight:500;color:#fff;margin-bottom:3px}
+.cg-desc{font-size:12px;color:rgba(255,255,255,.4);line-height:1.5}
+.cg-action{font-size:11px;color:var(--gold);margin-top:5px;font-weight:500}
+.cg-badge{display:inline-block;font-size:10px;padding:2px 8px;background:rgba(196,150,58,.1);color:var(--gold);border:1px solid rgba(196,150,58,.2);margin-top:5px}
+
+/* ══════════════════════════════
+   VVIP WORLD —올 블랙 + 로즈골드
+══════════════════════════════ */
+#sv{background:var(--vvip-bg);display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
+.vvip-particles{position:absolute;inset:0;pointer-events:none}
+.particle{position:absolute;width:2px;height:2px;background:var(--vvip-gold);border-radius:50%;animation:float var(--dur) ease-in-out infinite;opacity:0}
+@keyframes float{0%{opacity:0;transform:translateY(100vh) scale(0)}20%{opacity:.6}80%{opacity:.3}100%{opacity:0;transform:translateY(-20px) scale(1.5)}}
+.vvip-content{position:relative;z-index:1;text-align:center;padding:40px 28px}
+.vvip-crown{font-size:32px;margin-bottom:24px;animation:pulse 3s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.6;transform:scale(1)}50%{opacity:1;transform:scale(1.05)}}
+.vvip-eyebrow{font-size:9px;letter-spacing:.3em;color:rgba(212,168,83,.5);text-transform:uppercase;margin-bottom:16px}
+.vvip-title{font-family:'Cormorant Garamond',serif;font-size:42px;font-weight:300;color:#fff;line-height:1;margin-bottom:8px;letter-spacing:-.01em}
+.vvip-title-accent{color:var(--vvip-gold)}
+.vvip-line{width:60px;height:1px;background:linear-gradient(90deg,transparent,var(--vvip-gold),transparent);margin:20px auto}
+.vvip-desc{font-family:'Cormorant Garamond',serif;font-size:16px;color:rgba(255,255,255,.35);font-style:italic;line-height:1.7;margin-bottom:44px;max-width:280px}
+.vvip-enter{background:none;border:1px solid var(--vvip-gold);color:var(--vvip-gold);padding:14px 36px;font-family:'Inter',sans-serif;font-size:10px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;transition:all .4s;display:block;margin:0 auto}
+.vvip-enter:hover{background:var(--vvip-gold);color:#000}
+.vvip-code-hint{font-size:10px;color:rgba(255,255,255,.15);margin-top:14px;letter-spacing:.06em}
+
+/* VVIP MAIN */
+#sv2{background:var(--vvip-bg);padding:52px 20px 80px}
+.vvip-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(212,168,83,.08);border:1px solid rgba(212,168,83,.2);padding:5px 12px;margin-bottom:20px}
+.vvip-badge span{font-size:10px;color:var(--vvip-gold);letter-spacing:.14em;text-transform:uppercase}
+.vvip-section-h{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;color:#fff;margin-bottom:4px;line-height:1.2}
+.vvip-section-s{font-size:12px;color:rgba(255,255,255,.3);margin-bottom:24px;line-height:1.6}
+.vvip-services{display:flex;flex-direction:column;gap:0;border:1px solid rgba(212,168,83,.1)}
+.vs-row{padding:16px 18px;border-bottom:1px solid rgba(212,168,83,.07);display:flex;align-items:center;gap:14px;cursor:pointer;transition:all .22s}
+.vs-row:last-child{border-bottom:none}
+.vs-row:hover{background:rgba(212,168,83,.04)}
+.vs-icon{font-size:20px;width:30px;text-align:center;flex-shrink:0}
+.vs-body{flex:1}
+.vs-title{font-size:14px;color:#fff;font-weight:400;margin-bottom:2px}
+.vs-desc{font-size:11px;color:rgba(255,255,255,.3);line-height:1.4}
+.vs-arrow{color:rgba(212,168,83,.4);font-size:16px;flex-shrink:0}
+.vvip-concierge{background:rgba(212,168,83,.05);border:1px solid rgba(212,168,83,.15);padding:20px;margin-top:14px}
+.vc-label{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:rgba(212,168,83,.6);margin-bottom:12px}
+.vc-person{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.vc-avatar{width:44px;height:44px;background:rgba(212,168,83,.1);border:1px solid rgba(212,168,83,.2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.vc-name{font-size:14px;color:#fff;font-weight:500;margin-bottom:2px}
+.vc-role{font-size:11px;color:rgba(255,255,255,.35)}
+.vc-contact{display:flex;gap:8px}
+.vc-btn{flex:1;background:none;border:1px solid rgba(212,168,83,.2);color:rgba(212,168,83,.8);padding:10px;font-family:'Inter',sans-serif;font-size:11px;font-weight:500;cursor:pointer;letter-spacing:.06em;text-align:center;transition:all .2s}
+.vc-btn:hover{background:rgba(212,168,83,.1)}
+.vvip-membership{background:linear-gradient(135deg,rgba(212,168,83,.1),rgba(184,115,85,.08));border:1px solid rgba(212,168,83,.2);padding:20px;margin-top:10px}
+.vm-label{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:rgba(212,168,83,.5);margin-bottom:8px}
+.vm-price{font-family:'Cormorant Garamond',serif;font-size:32px;color:var(--vvip-gold);font-weight:300;margin-bottom:4px}
+.vm-period{font-size:12px;color:rgba(255,255,255,.3);margin-bottom:14px}
+.vm-features{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.vm-feat{font-size:12px;color:rgba(255,255,255,.55);display:flex;align-items:center;gap:8px}
+.vm-feat::before{content:'◇';color:var(--vvip-gold);font-size:10px;flex-shrink:0}
+.vm-join{background:var(--vvip-gold);border:none;width:100%;padding:13px;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;color:#000;cursor:pointer;letter-spacing:.1em;text-transform:uppercase}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="prog"><div class="prog-fill" id="pf" style="width:10%"></div></div>
+<div class="lang-bar" id="langBar">
+  <button class="lb active" onclick="sl('ko')">KO</button>
+  <button class="lb" onclick="sl('en')">EN</button>
+  <button class="lb" onclick="sl('th')">TH</button>
+</div>
+<div class="dots" id="dots">
+  <div class="dot active"></div><div class="dot"></div><div class="dot"></div>
+  <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+  <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+</div>
+<button class="nav-btn n-prev hide" id="pb" onclick="prev()">← <span id="pb-t">이전</span></button>
+<button class="nav-btn n-next" id="nb" onclick="next()"><span id="nb-t">다음 →</span></button>
+
+<!-- ══ S0 SPLASH ══ -->
+<div class="screen active" id="s0">
+  <div class="splash-bg">
+    <div class="splash-circle splash-c1"></div>
+    <div class="splash-circle splash-c2"></div>
+  </div>
+  <div class="splash-content">
+    <div class="splash-eyebrow">STMStyle Bangkok · Since 2009</div>
+    <div class="splash-logo">Dr.<span>match</span></div>
+    <div class="splash-by">by STM</div>
+    <div class="splash-line"></div>
+    <div class="splash-desc" id="splash-desc">AI가 나에게 맞는<br>한국 의사를 찾아드립니다</div>
+    <button class="splash-start" onclick="goto(1)" id="splash-btn">시작하기</button>
+    <div class="splash-vvip-hint" onclick="enterVVIP()" id="vvip-hint">◆ VVIP 전용 입장</div>
+  </div>
+</div>
+
+<!-- ══ S1 LANG ══ -->
+<div class="screen" id="s1">
+  <div class="lang-title" id="lang-title">언어를 선택해주세요</div>
+  <div class="lang-sub" id="lang-sub">Select your language</div>
+  <div class="lang-grid">
+    <div class="lang-item on" onclick="pickLang('ko',this)">
+      <div class="lang-item-left"><span class="lang-flag">🇰🇷</span><div><div class="lang-name">한국어</div><div class="lang-name-native">Korean</div></div></div>
+      <div class="lang-check">✓</div>
+    </div>
+    <div class="lang-item" onclick="pickLang('en',this)">
+      <div class="lang-item-left"><span class="lang-flag">🇬🇧</span><div><div class="lang-name">English</div><div class="lang-name-native">영어</div></div></div>
+      <div class="lang-check">✓</div>
+    </div>
+    <div class="lang-item" onclick="pickLang('th',this)">
+      <div class="lang-item-left"><span class="lang-flag">🇹🇭</span><div><div class="lang-name">ภาษาไทย</div><div class="lang-name-native">태국어</div></div></div>
+      <div class="lang-check">✓</div>
+    </div>
+  </div>
+  <div class="lang-more">🇯🇵 日本語 · 🇸🇦 العربية — Coming soon</div>
+</div>
+
+<!-- ══ S2 COUNTRY ══ -->
+<div class="screen" id="s2">
+  <div class="sec-pad" style="padding:52px 24px 80px">
+    <div class="sec-ey" id="s2-ey">국가</div>
+    <div class="sec-h" id="s2-h">어느 나라에서<br>오시나요?</div>
+    <div class="sec-s" id="s2-s">맞춤 의사와 컨시어지를 준비합니다</div>
+    <div class="country-grid">
+      <div class="country-btn" onclick="pickCountry(this,'🇹🇭','태국')"><span class="c-flag">🇹🇭</span><span class="c-name">태국</span></div>
+      <div class="country-btn" onclick="pickCountry(this,'🇦🇺','호주')"><span class="c-flag">🇦🇺</span><span class="c-name">호주</span></div>
+      <div class="country-btn" onclick="pickCountry(this,'🇬🇧','영국')"><span class="c-flag">🇬🇧</span><span class="c-name">영국</span></div>
+      <div class="country-btn" onclick="pickCountry(this,'🇸🇦','중동')"><span class="c-flag">🇸🇦</span><span class="c-name">중동</span></div>
+      <div class="country-btn" onclick="pickCountry(this,'🇸🇬','싱가포르')"><span class="c-flag">🇸🇬</span><span class="c-name">싱가포르</span></div>
+      <div class="country-btn" onclick="pickCountry(this,'🌏','기타')"><span class="c-flag">🌏</span><span class="c-name">기타</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ S3 TREATMENT ══ -->
+<div class="screen" id="s3">
+  <div style="padding:52px 24px 80px">
+    <div class="sec-ey">시술 선택</div>
+    <div class="sec-h" id="s3-h">어떤 시술을<br>원하시나요?</div>
+    <div class="sec-s" id="s3-s">관심 있는 분야를 선택해주세요</div>
+    <div class="treat-grid">
+      <div class="treat-btn" onclick="pickTreat(this,'눈')"><div class="t-icon">👁</div><div class="t-name">눈 성형</div></div>
+      <div class="treat-btn" onclick="pickTreat(this,'코')"><div class="t-icon">👃</div><div class="t-name">코 성형</div></div>
+      <div class="treat-btn" onclick="pickTreat(this,'지방분해')"><div class="t-icon">✨</div><div class="t-name">지방분해<br>바디케어</div></div>
+      <div class="treat-btn" onclick="pickTreat(this,'리프팅')"><div class="t-icon">💎</div><div class="t-name">리프팅<br>피부관리</div></div>
+      <div class="treat-btn" onclick="pickTreat(this,'안면윤곽')"><div class="t-icon">🔷</div><div class="t-name">안면윤곽</div></div>
+      <div class="treat-btn" onclick="pickTreat(this,'가슴')"><div class="t-icon">🌸</div><div class="t-name">가슴 성형</div></div>
+      <div class="treat-btn" onclick="pickTreat(this,'라식')"><div class="t-icon">🔬</div><div class="t-name">라식·라섹</div></div>
+      <div class="treat-btn" onclick="pickTreat(this,'건강검진')"><div class="t-icon">🏥</div><div class="t-name">건강검진</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ S4 MATCH ══ -->
+<div class="screen" id="s4">
+  <div style="padding:52px 24px 80px">
+    <div class="sec-ey">AI 매칭</div>
+    <div class="sec-h">원하는 조건을<br>알려주세요</div>
+    <div class="sec-s" style="margin-bottom:20px">AI가 최적의 의사를 찾습니다</div>
+
+    <div class="match-card">
+      <div class="mc-label">스타일</div>
+      <div class="mc-q">가장 중요한 것은?</div>
+      <div class="mc-opts">
+        <button class="mc-opt on" onclick="tog(this)">🌿 자연스러움</button>
+        <button class="mc-opt" onclick="tog(this)">⚡ 확실한 변화</button>
+        <button class="mc-opt" onclick="tog(this)">🏃 빠른 회복</button>
+        <button class="mc-opt" onclick="tog(this)">🔬 재수술 전문</button>
+      </div>
+    </div>
+
+    <div class="match-card">
+      <div class="mc-label">예산</div>
+      <div class="mc-q">예산 범위는?</div>
+      <div class="mc-opts">
+        <button class="mc-opt" onclick="tog(this)">200만원 이하</button>
+        <button class="mc-opt on" onclick="tog(this)">200~400만원</button>
+        <button class="mc-opt" onclick="tog(this)" style="grid-column:span 2">400만원 이상</button>
+      </div>
+    </div>
+
+    <div class="match-card">
+      <div class="mc-label">방문 일정</div>
+      <div class="mc-q">한국 방문 날짜 선택</div>
+      <div class="cal-wrap">
+        <div class="cal-header">
+          <button class="cal-nav">‹</button>
+          <div class="cal-month">2026년 8월</div>
+          <button class="cal-nav">›</button>
+        </div>
+        <div class="cal-days-header">
+          <div class="cal-day-name">일</div><div class="cal-day-name">월</div>
+          <div class="cal-day-name">화</div><div class="cal-day-name">수</div>
+          <div class="cal-day-name">목</div><div class="cal-day-name">금</div>
+          <div class="cal-day-name">토</div>
+        </div>
+        <div class="cal-days" id="calDays"></div>
+      </div>
+    </div>
+
+    <div class="match-card">
+      <div class="mc-label">체류 기간</div>
+      <div class="mc-q">한국에 머무를 기간은?</div>
+      <div class="mc-opts">
+        <button class="mc-opt" onclick="tog(this)">3~4일</button>
+        <button class="mc-opt on" onclick="tog(this)">5~7일</button>
+        <button class="mc-opt" onclick="tog(this)">2주 이상</button>
+        <button class="mc-opt" onclick="tog(this)">미정</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ S5 ANALYZING ══ -->
+<div class="screen" id="s5">
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:40px 28px">
+    <div class="analyzing-ring"></div>
+    <div class="analyzing-h" id="s5-h">AI 분석 중</div>
+    <div class="analyzing-s" id="s5-s">나에게 맞는 의사를 찾고 있습니다</div>
+    <div class="a-steps" id="aSteps">
+      <div class="a-step" id="as1">선택 데이터 분석</div>
+      <div class="a-step" id="as2">STM 검증 의사 DB 검색</div>
+      <div class="a-step" id="as3">전문분야 정밀 매칭</div>
+      <div class="a-step" id="as4">스타일·예산 필터링</div>
+      <div class="a-step" id="as5">최적 의사 3명 선정</div>
+    </div>
+    <div class="accuracy-bar">
+      <div class="acc-label">AI 매칭 정확도</div>
+      <div class="acc-track"><div class="acc-fill" id="accFill"></div></div>
+      <div class="acc-pct" id="accPct">0%</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ S6 RESULT ══ -->
+<div class="screen" id="s6">
+  <div style="padding:52px 20px 80px">
+    <div class="result-intro">
+      <div class="result-count">AI 매칭 완료 · 3명 선정</div>
+      <div class="result-h" id="s6-h">가장 적합한<br>의사를 찾았습니다</div>
+      <div class="result-s" id="s6-s">지방분해 · 자연스러움 기준</div>
+    </div>
+    <div class="doctor-cards">
+      <div class="doc-card" onclick="goto(7)">
+        <div class="doc-card-inner">
+          <div class="doc-rank-bar"><div class="doc-rank-num">1</div></div>
+          <div class="doc-content">
+            <div class="doc-name">손유나 원장</div>
+            <div class="doc-clinic">닥터손유나의원 · 서울 강남</div>
+            <div class="doc-tags">
+              <span class="doc-tag primary">C.A.T 지방분해</span>
+              <span class="doc-tag">21년 경력</span>
+              <span class="doc-tag">여성 원장</span>
+              <span class="doc-tag">STM 검증</span>
+            </div>
+            <div class="doc-match">
+              <div class="doc-match-bar"><div class="doc-match-fill" id="mf1" style="width:0"></div></div>
+              <div class="doc-match-pct" id="mp1">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="doc-card" onclick="goto(7)">
+        <div class="doc-card-inner">
+          <div class="doc-rank-bar"><div class="doc-rank-num">2</div></div>
+          <div class="doc-content">
+            <div class="doc-name">양해원 원장</div>
+            <div class="doc-clinic">아이니크성형외과 · 서울 강남</div>
+            <div class="doc-tags">
+              <span class="doc-tag primary">리프팅</span>
+              <span class="doc-tag">15년 경력</span>
+              <span class="doc-tag">STM 검증</span>
+            </div>
+            <div class="doc-match">
+              <div class="doc-match-bar"><div class="doc-match-fill" id="mf2" style="width:0"></div></div>
+              <div class="doc-match-pct" id="mp2">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="doc-card" onclick="goto(7)">
+        <div class="doc-card-inner">
+          <div class="doc-rank-bar"><div class="doc-rank-num">3</div></div>
+          <div class="doc-content">
+            <div class="doc-name">정한울 원장</div>
+            <div class="doc-clinic">서울페이스21 · 서울 강남</div>
+            <div class="doc-tags">
+              <span class="doc-tag primary">눈·코</span>
+              <span class="doc-tag">18년 경력</span>
+              <span class="doc-tag">STM 검증</span>
+            </div>
+            <div class="doc-match">
+              <div class="doc-match-bar"><div class="doc-match-fill" id="mf3" style="width:0"></div></div>
+              <div class="doc-match-pct" id="mp3">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ S7 PROFILE ══ -->
+<div class="screen" id="s7">
+  <div class="profile-hero">
+    <div class="profile-hero-bg"></div>
+    <div class="profile-hero-grid">
+      <div class="profile-photo-wrap">
+        <img src="/mnt/user-data/outputs/sonyouna_profile.jpg" alt="손유나 원장" onerror="this.style.background='rgba(196,150,58,.1)';this.style.display='flex';this.innerHTML='👩‍⚕️'">
+      </div>
+      <div class="profile-hero-text">
+        <div class="profile-verified">STM 4단계 검증</div>
+        <div class="profile-name">손유나</div>
+        <div class="profile-name-en">Son Yoona, MD</div>
+        <div class="profile-clinic">📍 닥터손유나의원 · 강남 신사동</div>
+        <div class="profile-tags">
+          <span class="profile-tag sig">C.A.T 캣주사</span>
+          <span class="profile-tag">지방분해</span>
+          <span class="profile-tag">여성 원장</span>
+          <span class="profile-tag">21년</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="profile-body">
+    <div class="profile-section">
+      <div class="ps-label">경력</div>
+      <div class="timeline">
+        <div class="tl-row"><div class="tl-year">2005</div><div class="tl-text">의사면허 취득 · 21년 임상 경력</div></div>
+        <div class="tl-row"><div class="tl-year">前</div><div class="tl-text">연세대 세브란스병원 가정의학과 전임의</div></div>
+        <div class="tl-row"><div class="tl-year">前</div><div class="tl-text">세브란스병원 비만클리닉 교수</div></div>
+        <div class="tl-row"><div class="tl-year">2012</div><div class="tl-text">닥터손유나의원 대표 원장 (현재)</div></div>
+      </div>
+    </div>
+    <div class="profile-section">
+      <div class="ps-label">대표 시술</div>
+      <div class="treat-table">
+        <div class="tr-row"><div><div class="tr-name">매직 브이캣</div><div class="tr-sub">얼굴 윤곽 지방분해</div></div><div class="tr-price">90만원</div></div>
+        <div class="tr-row"><div><div class="tr-name">파워 바디캣</div><div class="tr-sub">팔뚝·복부·허벅지</div></div><div class="tr-price">150만원</div></div>
+        <div class="tr-row"><div><div class="tr-name">코셀라 리프팅</div><div class="tr-sub">비수술 탄력</div></div><div class="tr-price">100만원</div></div>
+        <div class="tr-row"><div><div class="tr-name">울쎄라 HIFU</div><div class="tr-sub">600샷</div></div><div class="tr-price">250만원</div></div>
+      </div>
+    </div>
+    <div class="profile-section">
+      <div class="ps-label">STM 검증</div>
+      <div class="verify-grid">
+        <div class="v-box"><div class="v-num">1</div><div class="v-txt">의사가<br>소개</div></div>
+        <div class="v-box"><div class="v-num">2</div><div class="v-txt">크로스<br>체크</div></div>
+        <div class="v-box"><div class="v-num">3</div><div class="v-txt">웹<br>리서치</div></div>
+        <div class="v-box"><div class="v-num">4</div><div class="v-txt">대면<br>확인</div></div>
+      </div>
+      <div class="verify-stamp">
+        <div class="vs-icon">✓</div>
+        <div class="vs-text">STM 김선하 대표 직접 검증 · 2026년 4월 · 서울 강남</div>
+      </div>
+    </div>
+    <button class="profile-cta" onclick="goto(8)">이 의사와 상담 신청하기</button>
+  </div>
+</div>
+
+<!-- ══ S8 CONSULT + PAYMENT ══ -->
+<div class="screen" id="s8">
+  <div style="padding:52px 20px 80px">
+    <div class="sec-ey">상담 신청</div>
+    <div class="sec-h" style="margin-bottom:6px">손유나 원장과<br>상담 예약</div>
+    <div class="sec-s" style="margin-bottom:24px">STM 컨시어지가 모든 과정을 도와드립니다</div>
+
+    <div class="consult-steps">
+      <div class="cs-item">
+        <div class="cs-num">1</div>
+        <div class="cs-body">
+          <div class="cs-title">예약금 결제</div>
+          <div class="cs-desc">상담 예약금 결제 후 STM 컨시어지와 연결됩니다</div>
+          <div class="cs-badge">즉시 처리</div>
+        </div>
+      </div>
+      <div class="cs-item">
+        <div class="cs-num">2</div>
+        <div class="cs-body">
+          <div class="cs-title">컨시어지 연결</div>
+          <div class="cs-desc">태국어·영어 전담 매니저가 배정됩니다</div>
+          <div class="cs-badge">24시간 이내</div>
+        </div>
+      </div>
+      <div class="cs-item">
+        <div class="cs-num">3</div>
+        <div class="cs-body">
+          <div class="cs-title">일정·서류 준비</div>
+          <div class="cs-desc">병원 예약·서류·숙소·항공 일정을 함께 준비합니다</div>
+        </div>
+      </div>
+      <div class="cs-item">
+        <div class="cs-num">4</div>
+        <div class="cs-body">
+          <div class="cs-title">한국 방문·수술</div>
+          <div class="cs-desc">공항 픽업부터 병원 동행·통역까지 STM이 함께합니다</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="payment-box">
+      <div class="pb-label">결제 내역</div>
+      <div class="pb-row"><span class="pb-name">상담 예약금</span><span class="pb-amount">₩50,000</span></div>
+      <div class="pb-row"><span class="pb-name">수술 계약금 (별도)</span><span class="pb-amount">시술 확정 후</span></div>
+      <div class="pb-row"><span class="pb-name">컨시어지 서비스</span><span class="pb-amount">포함</span></div>
+    </div>
+
+    <button class="pay-btn" onclick="goto(9)">₩50,000 예약금 결제</button>
+    <div class="pay-sub">VISA · Mastercard · PromptPay · KakaoPay</div>
+  </div>
+</div>
+
+<!-- ══ S9 CONCIERGE DASHBOARD ══ -->
+<div class="screen" id="s9">
+  <div style="padding:52px 20px 80px">
+    <div class="concierge-header">
+      <div class="sec-ey">컨시어지 대시보드</div>
+      <div class="sec-h">모든 준비를<br>STM이 함께합니다</div>
+    </div>
+    <div class="concierge-grid">
+      <div class="cg-card active" onclick="this.classList.toggle('active')">
+        <div class="cg-icon">📅</div>
+        <div class="cg-body">
+          <div class="cg-title">일정 관리</div>
+          <div class="cg-desc">한국 방문 일정을 달력으로 관리합니다</div>
+          <div class="cg-action">8월 15일 선택됨 →</div>
+        </div>
+      </div>
+      <div class="cg-card" onclick="this.classList.toggle('active')">
+        <div class="cg-icon">📋</div>
+        <div class="cg-body">
+          <div class="cg-title">서류 신청</div>
+          <div class="cg-desc">필요 서류를 병원으로 직접 신청합니다</div>
+          <div class="cg-badge">병원 직접 연결</div>
+        </div>
+      </div>
+      <div class="cg-card" onclick="this.classList.toggle('active')">
+        <div class="cg-icon">🏨</div>
+        <div class="cg-body">
+          <div class="cg-title">숙소 추천</div>
+          <div class="cg-desc">병원 인근 검증된 숙소를 추천합니다</div>
+          <div class="cg-badge">제휴 할인 적용</div>
+        </div>
+      </div>
+      <div class="cg-card" onclick="this.classList.toggle('active')">
+        <div class="cg-icon">🚗</div>
+        <div class="cg-body">
+          <div class="cg-title">공항 픽업</div>
+          <div class="cg-desc">인천공항 픽업이 자동으로 예약됩니다</div>
+          <div class="cg-badge">자동 연결</div>
+        </div>
+      </div>
+      <div class="cg-card" onclick="this.classList.toggle('active')">
+        <div class="cg-icon">🗣</div>
+        <div class="cg-body">
+          <div class="cg-title">통역 동행</div>
+          <div class="cg-desc">태국어·영어 전담 통역사가 동행합니다</div>
+          <div class="cg-badge">VIP 전담팀</div>
+        </div>
+      </div>
+      <div class="cg-card" onclick="this.classList.toggle('active')">
+        <div class="cg-icon">💊</div>
+        <div class="cg-body">
+          <div class="cg-title">경과 체크</div>
+          <div class="cg-desc">귀국 후 병원과 직접 연결해 경과를 확인합니다</div>
+          <div class="cg-badge">병원 직접 연결</div>
+        </div>
+      </div>
+      <div class="cg-card" onclick="enterVVIP()" style="border-color:rgba(196,150,58,.25);background:linear-gradient(135deg,rgba(196,150,58,.06),rgba(184,115,85,.04))">
+        <div class="cg-icon">♦️</div>
+        <div class="cg-body">
+          <div class="cg-title" style="color:var(--gold)">VVIP 전담 서비스</div>
+          <div class="cg-desc">최상위 프라이버시·전용차·전담 컨시어지</div>
+          <div class="cg-action" style="color:var(--rose)">VVIP 공간 입장 →</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ VVIP ENTRY ══ -->
+<div class="screen" id="sv">
+  <canvas id="particleCanvas" style="position:absolute;inset:0;width:100%;height:100%"></canvas>
+  <div class="vvip-content">
+    <div class="vvip-crown">♦</div>
+    <div class="vvip-eyebrow">Exclusive · By Invitation Only</div>
+    <div class="vvip-title">Dr.<span class="vvip-title-accent">match</span><br>VVIP</div>
+    <div class="vvip-line"></div>
+    <div class="vvip-desc">최상위 프라이버시와<br>전담 컨시어지 서비스.<br>선별된 분들만을 위한 공간입니다.</div>
+    <button class="vvip-enter" onclick="goto('sv2')">입장하기</button>
+    <div class="vvip-code-hint">초대코드 보유 시 별도 입장</div>
+  </div>
+</div>
+
+<!-- ══ VVIP MAIN ══ -->
+<div class="screen" id="sv2">
+  <div style="padding:52px 20px 80px;background:var(--vvip-bg);min-height:100%">
+    <div class="vvip-badge"><span>♦ VVIP MEMBER</span></div>
+    <div class="vvip-section-h">프리미엄<br>전담 서비스</div>
+    <div class="vvip-section-s">모든 것이 조용하고 신속하게<br>처리됩니다</div>
+
+    <div class="vvip-services">
+      <div class="vs-row">
+        <div class="vs-icon">🚘</div>
+        <div class="vs-body">
+          <div class="vs-title">전용 의전 차량</div>
+          <div class="vs-desc">Mercedes S-Class · BMW 7 Series 픽업</div>
+        </div>
+        <div class="vs-arrow">›</div>
+      </div>
+      <div class="vs-row">
+        <div class="vs-icon">🏨</div>
+        <div class="vs-body">
+          <div class="vs-title">5성급 호텔 연결</div>
+          <div class="vs-desc">파크하얏트·포시즌스·신라호텔 전용 예약</div>
+        </div>
+        <div class="vs-arrow">›</div>
+      </div>
+      <div class="vs-row">
+        <div class="vs-icon">🔒</div>
+        <div class="vs-body">
+          <div class="vs-title">완전 비공개 동선</div>
+          <div class="vs-desc">VIP 전용 입구·대기실·독립 회복실</div>
+        </div>
+        <div class="vs-arrow">›</div>
+      </div>
+      <div class="vs-row">
+        <div class="vs-icon">👤</div>
+        <div class="vs-body">
+          <div class="vs-title">전담 컨시어지 1:1 배정</div>
+          <div class="vs-desc">태국어·영어·한국어 동시 지원</div>
+        </div>
+        <div class="vs-arrow">›</div>
+      </div>
+      <div class="vs-row">
+        <div class="vs-icon">💳</div>
+        <div class="vs-body">
+          <div class="vs-title">고액 수술 분할 결제</div>
+          <div class="vs-desc">USD·THB·SGD·AED 외화 결제 가능</div>
+        </div>
+        <div class="vs-arrow">›</div>
+      </div>
+    </div>
+
+    <div class="vvip-concierge" style="margin-top:14px">
+      <div class="vc-label">나의 전담 컨시어지</div>
+      <div class="vc-person">
+        <div class="vc-avatar">👩</div>
+        <div>
+          <div class="vc-name">김선하 대표</div>
+          <div class="vc-role">STMStyle CEO · 18년 태국 현지 전문가</div>
+        </div>
+      </div>
+      <div class="vc-contact">
+        <button class="vc-btn">📱 LINE 연결</button>
+        <button class="vc-btn">📞 직통 전화</button>
+      </div>
+    </div>
+
+    <div class="vvip-membership">
+      <div class="vm-label">VVIP 연간 멤버십</div>
+      <div class="vm-price">₩5,000,000</div>
+      <div class="vm-period">연간 · 모든 방문에 적용</div>
+      <div class="vm-features">
+        <div class="vm-feat">전담 컨시어지 365일 대기</div>
+        <div class="vm-feat">의전 차량 무제한 이용</div>
+        <div class="vm-feat">5성급 호텔 우선 예약</div>
+        <div class="vm-feat">비공개 의사 직접 연결</div>
+        <div class="vm-feat">연간 건강검진 포함</div>
+        <div class="vm-feat">가족 추가 멤버 할인</div>
+      </div>
+      <button class="vm-join">멤버십 신청하기</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<script>
+// ── State ──
+let cur = 0, lang = 'ko', vvipMode = false;
+const screenOrder = ['s0','s1','s2','s3','s4','s5','s6','s7','s8','s9','sv','sv2'];
+let s5done = false;
+
+// ── Calendar ──
+function buildCal() {
+  const days = document.getElementById('calDays');
+  const start = 6; // Aug 1 = Saturday, offset
+  const total = 31;
+  let html = '';
+  for (let i = 0; i < start; i++) html += `<div class="cal-day other">${31-start+1+i}</div>`;
+  for (let d = 1; d <= total; d++) {
+    const cls = d === 15 ? 'selected' : d === 21 ? 'today' : '';
+    html += `<div class="cal-day ${cls}" onclick="this.parentElement.querySelectorAll('.cal-day').forEach(x=>x.classList.remove('selected'));this.classList.add('selected')">${d}</div>`;
+  }
+  days.innerHTML = html;
+}
+buildCal();
+
+// ── Nav ──
+function getIdx() {
+  return screenOrder.indexOf('s'+cur);
+}
+
+function goto(n) {
+  const ce = document.querySelector('.screen.active');
+  if (ce) { ce.classList.add('exit'); setTimeout(()=>ce.classList.remove('active','exit'),450); }
+
+  const id = typeof n === 'string' ? n : 's'+n;
+  cur = typeof n === 'number' ? n : n;
+
+  setTimeout(()=>{
+    const ne = document.getElementById(id);
+    ne.classList.add('active');
+    ne.scrollTop = 0;
+  }, 40);
+
+  const idx = screenOrder.indexOf(id);
+  const total = screenOrder.length;
+  document.getElementById('pf').style.width = ((idx+1)/total*100)+'%';
+  const dots = document.querySelectorAll('.dot');
+  dots.forEach((d,i)=>d.classList.toggle('active',i===idx));
+  document.getElementById('pb').classList.toggle('hide', idx<=0 || id==='sv' || id==='sv2');
+
+  const isLast = idx === total-1;
+  const labels = {ko:{next:'다음 →',done:'✓ 완료',prev:'← 이전'},en:{next:'Next →',done:'✓ Done',prev:'← Back'},th:{next:'ถัดไป →',done:'✓ เสร็จ',prev:'← ย้อน'}};
+  document.getElementById('nb-t').textContent = isLast ? labels[lang].done : labels[lang].next;
+  document.getElementById('pb-t').textContent = labels[lang].prev;
+
+  const hideNav = ['s0','s5','sv','sv2'].includes(id);
+  document.getElementById('nb').style.display = hideNav ? 'none' : '';
+  document.getElementById('pb').style.display = (hideNav || idx<=0) ? 'none' : '';
+  document.getElementById('dots').style.display = (id==='sv'||id==='sv2') ? 'none' : '';
+  document.getElementById('langBar').style.display = (id==='sv'||id==='sv2') ? 'none' : '';
+
+  if (id==='s5') startAnalyzing();
+  if (id==='s6') showResults();
+  if (id==='sv') startParticles();
+}
+
+function next() {
+  const idx = screenOrder.findIndex(s => document.getElementById(s)?.classList.contains('active'));
+  if (idx < screenOrder.length-1) goto(screenOrder[idx+1]);
+}
+function prev() {
+  const idx = screenOrder.findIndex(s => document.getElementById(s)?.classList.contains('active'));
+  if (idx > 0) goto(screenOrder[idx-1]);
+}
+
+// ── Lang ──
+function sl(l) {
+  lang = l;
+  ['ko','en','th'].forEach(x=>{
+    document.querySelector(`.lb[onclick*="'${x}'"]`).classList.toggle('active',x===l);
+  });
+  const T = {
+    ko:{splash:'AI가 나에게 맞는\n한국 의사를 찾아드립니다',btn:'시작하기',vvip:'◆ VVIP 전용 입장'},
+    en:{splash:'AI finds your perfect\nKorean doctor',btn:'Get Started',vvip:'◆ VVIP Access'},
+    th:{splash:'AI หาแพทย์เกาหลี\nที่เหมาะกับคุณ',btn:'เริ่มต้น',vvip:'◆ เข้า VVIP'}
+  };
+  document.getElementById('splash-desc').innerHTML = T[l].splash.replace('\n','<br>');
+  document.getElementById('splash-btn').textContent = T[l].btn;
+  document.getElementById('vvip-hint').textContent = T[l].vvip;
+}
+function pickLang(l, el) {
+  lang = l;
+  document.querySelectorAll('.lang-item').forEach(x=>x.classList.remove('on'));
+  el.classList.add('on');
+  sl(l);
+  setTimeout(()=>goto('s2'),300);
+}
+
+// ── Pickers ──
+function pickCountry(el, flag, name) {
+  document.querySelectorAll('.country-btn').forEach(x=>x.classList.remove('on'));
+  el.classList.add('on');
+  setTimeout(()=>goto('s3'),300);
+}
+function pickTreat(el, name) {
+  document.querySelectorAll('.treat-btn').forEach(x=>x.classList.remove('on'));
+  el.classList.add('on');
+  setTimeout(()=>goto('s4'),300);
+}
+function tog(btn) {
+  btn.closest('.mc-opts').querySelectorAll('.mc-opt').forEach(x=>x.classList.remove('on'));
+  btn.classList.add('on');
+}
+
+// ── Analyzing ──
+function startAnalyzing() {
+  if (s5done) return;
+  s5done = true;
+  const steps = ['as1','as2','as3','as4','as5'];
+  let acc = 0;
+  const fill = document.getElementById('accFill');
+  const pct = document.getElementById('accPct');
+  steps.forEach((id,i)=>{
+    setTimeout(()=>{
+      document.getElementById(id).classList.add('done');
+      acc = [42,64,78,89,95][i];
+      fill.style.width = acc+'%';
+      pct.textContent = acc+'%';
+      if (i===steps.length-1) setTimeout(()=>goto('s6'),800);
+    }, 500+i*600);
+  });
+}
+
+// ── Results ──
+function showResults() {
+  [[1,95],[2,88],[3,82]].forEach(([i,p])=>{
+    setTimeout(()=>{
+      document.getElementById('mf'+i).style.width=p+'%';
+      document.getElementById('mp'+i).textContent=p+'%';
+    },300+i*200);
+  });
+}
+
+// ── VVIP ──
+function enterVVIP() { goto('sv'); }
+
+// ── Particles ──
+function startParticles() {
+  const canvas = document.getElementById('particleCanvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth;
+  canvas.height = canvas.offsetHeight;
+  const W = canvas.width, H = canvas.height;
+  const particles = Array.from({length:60},()=>({
+    x: Math.random()*W,
+    y: H + Math.random()*H,
+    size: Math.random()*2+.5,
+    speed: Math.random()*1.5+.5,
+    opacity: 0,
+    maxOp: Math.random()*.6+.2,
+    color: Math.random()>.5 ? '#D4A853' : '#B87355'
+  }));
+  function animate() {
+    ctx.clearRect(0,0,W,H);
+    particles.forEach(p=>{
+      p.y -= p.speed;
+      p.opacity = p.y < H*.8 ? Math.min(p.maxOp,(H-p.y)/H*2) : p.y > H ? 0 : p.maxOp;
+      if (p.y < -10) { p.y = H+10; p.x = Math.random()*W; }
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = p.opacity;
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+    if (document.getElementById('sv').classList.contains('active')) requestAnimationFrame(animate);
+  }
+  animate();
+}
+
+// init
+document.getElementById('nb').style.display = 'none';
+document.getElementById('pb').style.display = 'none';
+</script>
+</body>
+</html>
