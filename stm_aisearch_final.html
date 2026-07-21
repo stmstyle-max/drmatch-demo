@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>STM — AI Search Reality</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap');
+
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:#07090F;color:#fff;font-family:'Inter',sans-serif;overflow:hidden}
+.app{width:100%;max-width:430px;height:100%;margin:0 auto;position:relative;overflow:hidden}
+
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .35s,transform .35s;transform:translateX(32px);overflow-y:auto}
+.screen.active{opacity:1;pointer-events:all;transform:translateX(0)}
+.screen.exit{opacity:0;transform:translateX(-32px)}
+
+/* PROGRESS */
+.prog{position:fixed;top:0;left:0;right:0;max-width:430px;margin:0 auto;height:2px;background:rgba(255,255,255,.06);z-index:100}
+.prog-fill{height:100%;background:#B8952A;transition:width .5s}
+
+/* LANG */
+.lang-bar{position:fixed;top:8px;right:10px;display:flex;gap:3px;z-index:200}
+.lb{border:none;padding:4px 9px;font-family:'Inter',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .2s;border-radius:2px;letter-spacing:.05em}
+.lb.active{background:#B8952A;color:#fff}
+.lb:not(.active){background:rgba(255,255,255,.07);color:rgba(255,255,255,.35)}
+
+/* SPEC BADGE */
+.spec-badge{position:fixed;top:8px;left:10px;font-size:10px;font-weight:600;color:#B8952A;background:rgba(184,149,42,.12);border:1px solid rgba(184,149,42,.25);padding:4px 10px;letter-spacing:.05em;z-index:100;display:none}
+.spec-badge.on{display:block}
+
+/* DOTS */
+.dots{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:100}
+.dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.18);transition:all .3s}
+.dot.active{background:#B8952A;width:16px;border-radius:3px}
+
+/* NAV */
+.nav{position:fixed;z-index:100;border:none;cursor:pointer;font-family:'Inter',sans-serif;font-weight:700;font-size:11px;letter-spacing:.1em;transition:all .2s}
+.n-next{bottom:38px;right:16px;background:#B8952A;color:#fff;padding:10px 20px}
+.n-prev{bottom:38px;left:16px;background:rgba(255,255,255,.07);color:rgba(255,255,255,.45);padding:10px 16px}
+.n-prev.hide{display:none}
+
+/* PAD */
+.pad{padding:48px 20px 72px}
+
+/* TYPE */
+.eyebrow{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#B8952A;margin-bottom:10px}
+.h1{font-family:'Cormorant Garamond',serif;font-size:clamp(24px,6vw,34px);font-weight:400;line-height:1.2;margin-bottom:8px}
+.h1 em{color:#B8952A;font-style:italic}
+.sub{font-size:13px;color:rgba(255,255,255,.42);line-height:1.65;margin-bottom:22px}
+
+/* SPEC SELECT */
+#s0{align-items:center;justify-content:center;padding:28px 20px}
+.logo-text{font-size:11px;letter-spacing:.22em;color:rgba(255,255,255,.25);text-transform:uppercase;margin-bottom:28px}
+.spec-list{display:flex;flex-direction:column;gap:9px;width:100%;max-width:310px}
+.spec-item{background:#0E1420;border:1px solid rgba(255,255,255,.08);padding:16px 18px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:all .22s}
+.spec-item:active{transform:scale(.97)}
+.spec-item.on{border-color:#B8952A;background:rgba(184,149,42,.07)}
+.si-icon{font-size:22px;width:34px;text-align:center;flex-shrink:0}
+.si-name{font-size:14px;font-weight:600;color:#fff;margin-bottom:2px}
+.si-desc{font-size:11px;color:rgba(255,255,255,.38)}
+
+/* CHAT */
+.chat-box{background:#0D1424;border-radius:8px;overflow:hidden;margin-bottom:14px}
+.chat-top{background:#10A37F;padding:9px 13px;display:flex;align-items:center;gap:7px}
+.chat-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.4)}
+.chat-top span{font-size:11px;font-weight:700;color:#fff}
+.chat-inner{padding:13px}
+.chat-q{background:rgba(255,255,255,.06);border-radius:8px 8px 2px 8px;padding:9px 12px;font-size:12px;color:rgba(255,255,255,.78);margin-bottom:10px;line-height:1.55}
+.chat-ans{background:#151F30;border-radius:2px 8px 8px 8px;padding:11px 12px;font-size:12px;line-height:1.7}
+.cursor{display:inline-block;width:2px;height:11px;background:#B8952A;animation:blink .8s infinite;vertical-align:middle;margin-left:1px}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.c-no{color:#F87171;font-weight:500}
+.c-yes{color:#4ADE80}
+.warn{background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.18);padding:12px 14px;margin-top:12px;font-size:12px;color:rgba(255,255,255,.7);line-height:1.6}
+.warn strong{color:#F87171}
+
+/* SEARCH */
+.s-label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#B8952A;margin-bottom:7px}
+.s-row{display:flex;gap:7px;margin-bottom:16px}
+.s-input{flex:1;background:#0E1420;border:1px solid rgba(255,255,255,.1);color:#fff;font-family:'Inter',sans-serif;font-size:13px;padding:10px 12px;outline:none}
+.s-input::placeholder{color:rgba(255,255,255,.22)}
+.s-input:focus{border-color:#B8952A}
+.s-btn{background:#B8952A;color:#fff;border:none;padding:10px 14px;cursor:pointer;font-family:'Inter',sans-serif;font-size:11px;font-weight:700;letter-spacing:.07em;white-space:nowrap}
+.ai-list{display:flex;flex-direction:column;gap:7px}
+.ai-card{background:#0D1424;border:1px solid rgba(255,255,255,.07);overflow:hidden}
+.ai-card-h{padding:8px 12px;display:flex;align-items:center;gap:7px;border-bottom:1px solid rgba(255,255,255,.05)}
+.ai-d{width:6px;height:6px;border-radius:50%}
+.ai-card-h span{font-size:11px;font-weight:600;color:rgba(255,255,255,.55)}
+.ai-card-b{padding:9px 12px;font-size:12px;line-height:1.6;color:rgba(255,255,255,.3);font-style:italic}
+.ai-card-b.hit{color:#F87171;font-style:normal}
+.impact{background:rgba(248,113,113,.06);border-left:3px solid #F87171;padding:11px 13px;margin-top:14px;font-size:12px;color:rgba(255,255,255,.7);line-height:1.6;display:none}
+
+/* GRAPH */
+.graph-card{background:#0D1424;border-radius:8px;padding:18px;margin-bottom:14px}
+.graph-lbl{font-size:10px;color:rgba(255,255,255,.35);margin-bottom:14px;letter-spacing:.04em}
+.graph-svg{width:100%;height:130px}
+.graph-legend{display:flex;gap:14px;margin-top:10px}
+.gl-item{display:flex;align-items:center;gap:5px;font-size:11px;color:rgba(255,255,255,.45)}
+.gl-dot{width:7px;height:7px;border-radius:50%}
+
+.stat-2{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px}
+.stat-b{background:#0D1424;border-radius:8px;padding:14px;text-align:center}
+.stat-n{font-family:'Cormorant Garamond',serif;font-size:30px;color:#B8952A;font-weight:500}
+.stat-l{font-size:10px;color:rgba(255,255,255,.38);margin-top:5px;line-height:1.4}
+.stat-a{font-size:11px;margin-top:4px;font-weight:700}
+
+.key-box{background:rgba(184,149,42,.06);border:1px solid rgba(184,149,42,.18);padding:13px;font-size:12px;color:rgba(255,255,255,.72);line-height:1.7}
+.key-box strong{color:#B8952A}
+
+/* WORK */
+.work-flow{display:flex;flex-direction:column;gap:0}
+.wf-step{display:flex;gap:12px;padding:13px 0;border-bottom:1px solid rgba(255,255,255,.05);position:relative}
+.wf-step:last-child{border-bottom:none}
+.wf-num{width:28px;height:28px;background:#B8952A;color:#0D1B2A;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;border-radius:50%}
+.wf-body{}
+.wf-title{font-size:13px;font-weight:600;color:#fff;margin-bottom:3px;line-height:1.4}
+.wf-desc{font-size:11px;color:rgba(255,255,255,.42);line-height:1.5}
+.wf-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.wf-tag{font-size:10px;padding:2px 7px;background:rgba(184,149,42,.1);color:#B8952A;border:1px solid rgba(184,149,42,.2)}
+
+/* BUILD TABS */
+.btabs{display:flex;gap:0;margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,.07)}
+.btab{padding:8px 12px;font-size:11px;font-weight:600;border:none;cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:.05em;background:none;color:rgba(255,255,255,.32);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;transition:all .2s}
+.btab.active{color:#B8952A;border-bottom-color:#B8952A}
+.bpanel{display:none}
+.bpanel.active{display:block}
+
+.blog-list{background:#0D1424;border-radius:8px;overflow:hidden}
+.blog-hdr{background:#131D2E;padding:9px 13px;font-size:10px;color:rgba(255,255,255,.35);letter-spacing:.08em;text-transform:uppercase}
+.blog-row{padding:12px 13px;border-bottom:1px solid rgba(255,255,255,.05)}
+.blog-row:last-child{border-bottom:none}
+.blog-ch{font-size:10px;color:#B8952A;letter-spacing:.06em;margin-bottom:3px}
+.blog-t{font-size:13px;color:#fff;font-weight:500;line-height:1.4;margin-bottom:3px}
+.blog-m{font-size:10px;color:rgba(255,255,255,.28)}
+
+.plat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.plat-c{background:#0D1424;padding:13px;border:1px solid rgba(255,255,255,.06);border-radius:6px}
+.plat-c.star{border-color:rgba(184,149,42,.25)}
+.plat-ic{font-size:18px;margin-bottom:7px}
+.plat-nm{font-size:13px;font-weight:600;color:#fff;margin-bottom:2px}
+.plat-dc{font-size:10px;color:rgba(255,255,255,.38);line-height:1.4}
+.plat-ai{font-size:10px;color:#B8952A;margin-top:5px;font-weight:700}
+
+.schema-code{background:#0D1424;padding:14px;font-family:monospace;font-size:11px;line-height:1.8;color:#4ADE80;border-radius:8px;overflow-x:auto}
+.sk{color:#60A5FA}.sv{color:#F472B6}
+.schema-note{margin-top:10px;font-size:11px;color:rgba(255,255,255,.38);line-height:1.55;font-style:italic}
+
+/* BA */
+.ps-row{display:flex;gap:5px;margin-bottom:12px;flex-wrap:wrap}
+.ps{padding:5px 11px;font-size:10px;font-weight:700;border:1px solid rgba(255,255,255,.1);background:none;color:rgba(255,255,255,.38);cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:.05em;transition:all .2s}
+.ps.active{background:#B8952A;color:#fff;border-color:#B8952A}
+.ba-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.ba-b{background:#0D1424;border:1px solid rgba(255,255,255,.07);border-radius:6px;overflow:hidden}
+.ba-b.after{border-color:rgba(74,222,128,.25)}
+.ba-bh{padding:8px 11px;border-bottom:1px solid rgba(255,255,255,.05);display:flex;align-items:center;gap:5px}
+.ba-hd{width:5px;height:5px;border-radius:50%}
+.ba-hl{font-size:10px;font-weight:700;letter-spacing:.08em}
+.ba-bb{padding:11px}
+.ba-q{font-size:10px;color:rgba(255,255,255,.3);margin-bottom:7px;font-style:italic;line-height:1.4}
+.ba-no{font-size:11px;color:#F87171;line-height:1.6}
+.ba-ok{font-size:11px;color:#4ADE80;line-height:1.6}
+.ba-ok strong{color:#fff}
+
+/* CTA */
+#s7{align-items:center;justify-content:center;padding:36px 20px 72px;background:#0B1525}
+.cta-ey{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#B8952A;margin-bottom:12px;text-align:center}
+.cta-h{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:400;text-align:center;line-height:1.2;margin-bottom:7px}
+.cta-s{font-size:13px;color:rgba(255,255,255,.4);text-align:center;margin-bottom:24px;line-height:1.6;max-width:320px}
+.tl{display:flex;gap:0;width:100%;max-width:400px;margin-bottom:20px}
+.tl-b{flex:1;padding:14px 11px;border:1px solid rgba(255,255,255,.1)}
+.tl-b.build{border-color:#B8952A;background:rgba(184,149,42,.05)}
+.tl-ph{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:#B8952A;margin-bottom:3px}
+.tl-nm{font-size:14px;font-weight:700;color:#fff;margin-bottom:2px}
+.tl-pr{font-size:11px;color:rgba(255,255,255,.45);margin-bottom:9px}
+.tl-li{display:flex;flex-direction:column;gap:3px}
+.tl-it{font-size:11px;color:rgba(255,255,255,.5);display:flex;gap:4px;line-height:1.4}
+.tl-it::before{content:'·';color:#B8952A;flex-shrink:0}
+.tl-arr{display:flex;align-items:center;justify-content:center;width:20px;flex-shrink:0;color:#B8952A;font-size:15px}
+.cta-box{width:100%;max-width:400px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);padding:16px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.cta-info p{font-size:11px;color:rgba(255,255,255,.38);margin-bottom:2px}
+.cta-info strong{font-size:13px;color:#fff;display:block;margin-bottom:1px}
+.cta-info span{font-size:11px;color:#B8952A}
+.cta-act{background:#B8952A;color:#fff;border:none;padding:10px 16px;font-family:'Inter',sans-serif;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;white-space:nowrap}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="prog"><div class="prog-fill" id="pf" style="width:12.5%"></div></div>
+<div class="lang-bar">
+  <button class="lb active" onclick="sl('ko')">KO</button>
+  <button class="lb" onclick="sl('en')">EN</button>
+  <button class="lb" onclick="sl('th')">TH</button>
+</div>
+<div class="spec-badge" id="sb"></div>
+<div class="dots" id="dots">
+  <div class="dot active"></div><div class="dot"></div><div class="dot"></div>
+  <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+  <div class="dot"></div><div class="dot"></div>
+</div>
+<button class="nav n-prev hide" id="pb" onclick="prev()">← <span class="t" data-t='{"ko":"이전","en":"Back","th":"ย้อน"}'></span></button>
+<button class="nav n-next" id="nb" onclick="next()"><span class="t" data-t='{"ko":"다음 →","en":"Next →","th":"ถัดไป →"}'></span></button>
+
+<!-- S0 SPECIALTY -->
+<div class="screen active" id="s0">
+  <div class="logo-text">STMStyle · Bangkok · Since 2009</div>
+  <div class="h1" style="text-align:center;font-size:26px;margin-bottom:6px">
+    <span class="t" data-t='{"ko":"전문분야를 선택해주세요","en":"Select your specialty","th":"เลือกความเชี่ยวชาญ"}'></span>
+  </div>
+  <div class="sub" style="text-align:center;margin-bottom:24px">
+    <span class="t" data-t='{"ko":"선택하면 AI 검색 현황을 실시간으로 보여드립니다","en":"We will show your AI search reality in real time","th":"เราจะแสดงสถานการณ์การค้นหา AI แบบเรียลไทม์"}'></span>
+  </div>
+  <div class="spec-list">
+    <div class="spec-item" onclick="pick(this,'plastic')">
+      <span class="si-icon">💎</span>
+      <div><div class="si-name"><span class="t" data-t='{"ko":"성형외과","en":"Plastic Surgery","th":"ศัลยกรรมความงาม"}'></span></div>
+      <div class="si-desc"><span class="t" data-t='{"ko":"코·눈·윤곽·지방이식","en":"Nose·Eyes·Contour·Fat Graft","th":"จมูก·ตา·รูปหน้า·ไขมัน"}'></span></div></div>
+    </div>
+    <div class="spec-item" onclick="pick(this,'eye')">
+      <span class="si-icon">👁</span>
+      <div><div class="si-name"><span class="t" data-t='{"ko":"안과","en":"Ophthalmology","th":"จักษุวิทยา"}'></span></div>
+      <div class="si-desc"><span class="t" data-t='{"ko":"라식·라섹·백내장·노안","en":"LASIK·LASEK·Cataract","th":"LASIK·LASEK·ต้อกระจก"}'></span></div></div>
+    </div>
+    <div class="spec-item" onclick="pick(this,'checkup')">
+      <span class="si-icon">🏥</span>
+      <div><div class="si-name"><span class="t" data-t='{"ko":"건강검진·내과","en":"Health Checkup","th":"ตรวจสุขภาพ"}'></span></div>
+      <div class="si-desc"><span class="t" data-t='{"ko":"종합검진·암검진·외국인 특화","en":"Full Checkup·Cancer Screening","th":"ตรวจสุขภาพครบวงจร"}'></span></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- S1 SHOCK -->
+<div class="screen" id="s1">
+  <div class="pad">
+    <div class="eyebrow">STEP 1</div>
+    <div class="h1"><span class="t" data-t='{"ko":"지금 이 순간\n해외 환자가 <em>원장님을</em>\n검색하고 있습니다","en":"Right now\npatients are searching\nfor <em>your specialty</em>","th":"ขณะนี้\nผู้ป่วยกำลังค้นหา\n<em>ความเชี่ยวชาญของคุณ</em>"}' data-nl></span></div>
+    <div class="sub"><span class="t" data-t='{"ko":"태국·호주·중동 환자들은 병원 홈페이지 방문 전, AI에서 먼저 의사를 검색합니다","en":"Thai, Australian, Middle Eastern patients search AI before visiting any hospital website","th":"ผู้ป่วยไทย ออสเตรเลีย ตะวันออกกลาง ค้นหา AI ก่อนเข้าเว็บโรงพยาบาล"}'></span></div>
+    <div class="chat-box">
+      <div class="chat-top"><div class="chat-dot"></div><span>ChatGPT</span></div>
+      <div class="chat-inner">
+        <div class="chat-q" id="s1q"></div>
+        <div class="chat-ans" id="s1a" style="display:none"></div>
+      </div>
+    </div>
+    <div class="warn" id="s1w" style="display:none"><p id="s1wp"></p></div>
+  </div>
+</div>
+
+<!-- S2 NAME SEARCH -->
+<div class="screen" id="s2">
+  <div class="pad">
+    <div class="eyebrow">STEP 2</div>
+    <div class="h1"><span class="t" data-t='{"ko":"지금 원장님 이름을\nAI에서 직접 검색하면?","en":"Search your name\non AI right now","th":"ลองค้นหาชื่อคุณหมอ\nบน AI ตอนนี้"}' data-nl></span></div>
+    <div class="sub"><span class="t" data-t='{"ko":"이름을 입력하면 ChatGPT·Gemini·Perplexity 3개에서 동시에 확인합니다","en":"Enter your name to check across ChatGPT, Gemini & Perplexity simultaneously","th":"ใส่ชื่อเพื่อตรวจสอบบน ChatGPT, Gemini และ Perplexity พร้อมกัน"}'></span></div>
+    <div class="s-label"><span class="t" data-t='{"ko":"원장님 이름","en":"Doctor name","th":"ชื่อแพทย์"}'></span></div>
+    <div class="s-row">
+      <input class="s-input" id="ni" type="text">
+      <button class="s-btn" onclick="doSearch()"><span class="t" data-t='{"ko":"AI 검색","en":"Search AI","th":"ค้นหา AI"}'></span></button>
+    </div>
+    <div class="ai-list">
+      <div class="ai-card"><div class="ai-card-h"><div class="ai-d" style="background:#10A37F"></div><span>ChatGPT</span></div><div class="ai-card-b" id="r1"><span class="t" data-t='{"ko":"이름을 입력하세요","en":"Enter a name above","th":"กรุณาใส่ชื่อ"}'></span></div></div>
+      <div class="ai-card"><div class="ai-card-h"><div class="ai-d" style="background:#4285F4"></div><span>Gemini</span></div><div class="ai-card-b" id="r2"><span class="t" data-t='{"ko":"이름을 입력하세요","en":"Enter a name above","th":"กรุณาใส่ชื่อ"}'></span></div></div>
+      <div class="ai-card"><div class="ai-card-h"><div class="ai-d" style="background:#8B5CF6"></div><span>Perplexity</span></div><div class="ai-card-b" id="r3"><span class="t" data-t='{"ko":"이름을 입력하세요","en":"Enter a name above","th":"กรุณาใส่ชื่อ"}'></span></div></div>
+    </div>
+    <div class="impact" id="imp"></div>
+  </div>
+</div>
+
+<!-- S3 GAP -->
+<div class="screen" id="s3">
+  <div class="pad">
+    <div class="eyebrow">STEP 3</div>
+    <div class="h1"><span class="t" data-t='{"ko":"격차는 지금도\n<em>벌어지고 있습니다</em>","en":"The gap is\n<em>widening right now</em>","th":"ช่องว่างกำลัง\n<em>ขยายใหญ่ขึ้น</em>"}' data-nl></span></div>
+    <div class="sub"><span class="t" data-t='{"ko":"경쟁 의사들은 이미 시작했습니다. 시작이 늦을수록 격차는 더 커집니다","en":"Competing doctors have already started. The later you start, the bigger the gap","th":"แพทย์คู่แข่งเริ่มแล้ว ยิ่งเริ่มช้า ช่องว่างยิ่งกว้าง"}'></span></div>
+    <div class="stat-2">
+      <div class="stat-b"><div class="stat-n" id="sn1">12</div><div class="stat-l" id="sl1"></div><div class="stat-a" style="color:#F87171">↑ <span class="t" data-t='{"ko":"지금","en":"Now","th":"ตอนนี้"}'></span></div></div>
+      <div class="stat-b"><div class="stat-n">34</div><div class="stat-l"><span class="t" data-t='{"ko":"6개월 후 예상","en":"Estimated in 6mo","th":"คาดการณ์ใน 6 เดือน"}'></span></div><div class="stat-a" style="color:#F87171">↑ 3x</div></div>
+    </div>
+    <div class="graph-card">
+      <div class="graph-lbl"><span class="t" data-t='{"ko":"AI 검색 노출 격차 — 시간에 따른 변화","en":"AI search visibility gap over time","th":"ช่องว่างการมองเห็น AI ตามเวลา"}'></span></div>
+      <svg class="graph-svg" viewBox="0 0 300 130" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="gg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#B8952A" stop-opacity=".25"/>
+            <stop offset="100%" stop-color="#B8952A" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <path d="M0,120 C60,105 120,70 180,40 S260,10 300,5" stroke="#B8952A" stroke-width="2.5" fill="none"/>
+        <path d="M0,120 C60,105 120,70 180,40 S260,10 300,5 L300,130 L0,130Z" fill="url(#gg)"/>
+        <path d="M0,120 C80,118 160,115 240,112 S280,110 300,108" stroke="rgba(255,255,255,.18)" stroke-width="1.5" fill="none" stroke-dasharray="4,3"/>
+        <text x="210" y="20" fill="#B8952A" font-size="9" font-family="Inter" font-weight="600">STM ✓</text>
+        <text x="220" y="105" fill="rgba(255,255,255,.28)" font-size="9" font-family="Inter">미구축</text>
+      </svg>
+      <div class="graph-legend">
+        <div class="gl-item"><div class="gl-dot" style="background:#B8952A"></div><span class="t" data-t='{"ko":"STM 구축 의사","en":"With STM data","th":"มีข้อมูล STM"}'></span></div>
+        <div class="gl-item"><div class="gl-dot" style="background:rgba(255,255,255,.2)"></div><span class="t" data-t='{"ko":"미구축 의사","en":"Without data","th":"ไม่มีข้อมูล"}'></span></div>
+      </div>
+    </div>
+    <div class="key-box"><span class="t" data-t='{"ko":"광고는 예산이 끊기면 <strong>즉시 사라집니다.</strong><br>STM 데이터는 시간이 지날수록 <strong>쌓이고 강해집니다.</strong>","en":"Ads disappear the moment you stop paying.<br>STM data <strong>compounds and grows stronger over time.</strong>","th":"โฆษณาหายทันทีที่หยุดจ่าย<br>ข้อมูล STM <strong>สะสมและแข็งแกร่งขึ้นตามเวลา</strong>"}' data-html></span></div>
+  </div>
+</div>
+
+<!-- S4 STM WORK -->
+<div class="screen" id="s4">
+  <div class="pad">
+    <div class="eyebrow">STEP 4</div>
+    <div class="h1"><span class="t" data-t='{"ko":"STM이 실제로\n<em>하는 업무</em>","en":"What STM\n<em>actually does</em>","th":"งานที่ STM\n<em>ทำจริง</em>"}' data-nl></span></div>
+    <div class="sub"><span class="t" data-t='{"ko":"의사 데이터 구축부터 AI 인용까지 — 단계별 실제 작업","en":"From doctor data to AI citation — step by step real work","th":"จากข้อมูลแพทย์ถึง AI อ้างอิง — งานจริงแต่ละขั้นตอน"}'></span></div>
+    <div class="work-flow">
+      <div class="wf-step">
+        <div class="wf-num">1</div>
+        <div class="wf-body">
+          <div class="wf-title"><span class="t" data-t='{"ko":"의사 엔티티 데이터 구축","en":"Doctor Entity Data Build","th":"สร้างข้อมูล Entity แพทย์"}'></span></div>
+          <div class="wf-desc"><span class="t" data-t='{"ko":"경력·전문분야·학회·케이스·스타일을 AI가 읽을 수 있는 구조로 정리합니다","en":"Career, specialty, society memberships, cases structured for AI to read","th":"ประวัติ ความเชี่ยวชาญ สมาคม เคส ถูกจัดให้ AI อ่านได้"}'></span></div>
+          <div class="wf-tags"><span class="wf-tag">Schema JSON-LD</span><span class="wf-tag">Doctor Profile</span><span class="wf-tag">STM Verified</span></div>
+        </div>
+      </div>
+      <div class="wf-step">
+        <div class="wf-num">2</div>
+        <div class="wf-body">
+          <div class="wf-title"><span class="t" data-t='{"ko":"블로그 콘텐츠 제작 (월 6~8편)","en":"Blog Content Production (6–8/mo)","th":"ผลิตบล็อก (6–8 ชิ้น/เดือน)"}'></span></div>
+          <div class="wf-desc"><span class="t" data-t='{"ko":"영어·태국어로 의사 전문분야 관련 블로그를 제작해 Google·AI에 인덱싱합니다","en":"English & Thai blogs on doctor specialty indexed on Google & AI","th":"บล็อกภาษาอังกฤษ+ไทยเกี่ยวกับความเชี่ยวชาญ ถูก index บน Google & AI"}'></span></div>
+          <div class="wf-tags"><span class="wf-tag">EN+TH</span><span class="wf-tag">stmstyle.com</span><span class="wf-tag">Medium</span><span class="wf-tag">Pantip</span></div>
+        </div>
+      </div>
+      <div class="wf-step">
+        <div class="wf-num">3</div>
+        <div class="wf-body">
+          <div class="wf-title"><span class="t" data-t='{"ko":"롱폼 영상 제작·배포","en":"Long-form Video Production","th":"ผลิตและเผยแพร่วิดีโอยาว"}'></span></div>
+          <div class="wf-desc"><span class="t" data-t='{"ko":"의사 소개·시술 설명·케이스 영상을 YouTube에 발행합니다. 구글·AI 인용률 최고","en":"Doctor intro & procedure videos published on YouTube. Highest Google & AI citation","th":"วิดีโอแนะนำแพทย์ เผยแพร่บน YouTube ถูกอ้างอิงโดย Google & AI สูงสุด"}'></span></div>
+          <div class="wf-tags"><span class="wf-tag">YouTube</span><span class="wf-tag">EN+TH Subtitle</span><span class="wf-tag">AI Citation ★★★</span></div>
+        </div>
+      </div>
+      <div class="wf-step">
+        <div class="wf-num">4</div>
+        <div class="wf-body">
+          <div class="wf-title"><span class="t" data-t='{"ko":"8개 글로벌 플랫폼 동시 배포","en":"Deploy to 8 Global Platforms","th":"เผยแพร่ 8 แพลตฟอร์มพร้อมกัน"}'></span></div>
+          <div class="wf-desc"><span class="t" data-t='{"ko":"stmstyle.com·Medium·Pantip·Naver·RealSelf·Bookimed·YouTube·Blogger에 동시 게재합니다","en":"Simultaneous publishing on stmstyle.com·Medium·Pantip·Naver·RealSelf·Bookimed·YouTube·Blogger","th":"เผยแพร่พร้อมกันบน stmstyle.com·Medium·Pantip·Naver·RealSelf·Bookimed·YouTube·Blogger"}'></span></div>
+          <div class="wf-tags"><span class="wf-tag">8 Platforms</span><span class="wf-tag">Global</span><span class="wf-tag">17yr Domain</span></div>
+        </div>
+      </div>
+      <div class="wf-step">
+        <div class="wf-num">5</div>
+        <div class="wf-body">
+          <div class="wf-title"><span class="t" data-t='{"ko":"AI 인용률 추적 + 월간 리포트","en":"AI Citation Tracking + Monthly Report","th":"ติดตาม AI Citation + รายงานรายเดือน"}'></span></div>
+          <div class="wf-desc"><span class="t" data-t='{"ko":"ChatGPT·Gemini·Perplexity에서 원장님이 언급되는 빈도를 매월 추적해 보고합니다","en":"Monthly tracking of doctor mentions on ChatGPT, Gemini & Perplexity","th":"ติดตามการกล่าวถึงแพทย์บน ChatGPT, Gemini, Perplexity ทุกเดือน"}'></span></div>
+          <div class="wf-tags"><span class="wf-tag">Monthly Report</span><span class="wf-tag">AI Mention Rate</span><span class="wf-tag">BUILD 2mo+</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S5 WHAT WE BUILD -->
+<div class="screen" id="s5">
+  <div class="pad">
+    <div class="eyebrow">STEP 5</div>
+    <div class="h1"><span class="t" data-t='{"ko":"실제로 만들어지는\n<em>결과물들</em>","en":"The actual\n<em>deliverables</em>","th":"ผลลัพธ์ที่\n<em>สร้างขึ้นจริง</em>"}' data-nl></span></div>
+    <div class="sub"><span class="t" data-t='{"ko":"이 모든 것이 AI의 데이터베이스가 됩니다","en":"All of these become AI\'s database","th":"ทั้งหมดนี้กลายเป็นฐานข้อมูลของ AI"}'></span></div>
+    <div class="btabs">
+      <button class="btab active" onclick="sb2('blog',this)"><span class="t" data-t='{"ko":"📝 블로그","en":"📝 Blog","th":"📝 บล็อก"}'></span></button>
+      <button class="btab" onclick="sb2('plat',this)"><span class="t" data-t='{"ko":"🌐 플랫폼","en":"🌐 Platforms","th":"🌐 แพลตฟอร์ม"}'></span></button>
+      <button class="btab" onclick="sb2('schema',this)"><span class="t" data-t='{"ko":"🔧 Schema","en":"🔧 Schema","th":"🔧 Schema"}'></span></button>
+    </div>
+    <div class="bpanel active" id="bp-blog">
+      <div class="blog-list">
+        <div class="blog-hdr"><span class="t" data-t='{"ko":"월 6~8편 · 영어+태국어 동시 발행","en":"6–8/month · EN+TH simultaneous","th":"6–8/เดือน · EN+TH พร้อมกัน"}'></span></div>
+        <div class="blog-row"><div class="blog-ch">EN · Medium · stmstyle.com</div><div class="blog-t" id="bl1"></div><div class="blog-m">Google 인덱싱 → AI 인용</div></div>
+        <div class="blog-row"><div class="blog-ch">TH · Pantip · Blogger</div><div class="blog-t" id="bl2"></div><div class="blog-m">태국 환자 직접 유입</div></div>
+        <div class="blog-row"><div class="blog-ch">KR · Naver Blog</div><div class="blog-t" id="bl3"></div><div class="blog-m">한국어 검색 노출</div></div>
+      </div>
+    </div>
+    <div class="bpanel" id="bp-plat">
+      <div class="plat-grid">
+        <div class="plat-c star"><div class="plat-ic">🌐</div><div class="plat-nm">stmstyle.com</div><div class="plat-dc"><span class="t" data-t='{"ko":"17년 도메인 · AI 최고 신뢰도","en":"17yr domain · Top AI trust","th":"โดเมน 17 ปี"}'></span></div><div class="plat-ai">★★★</div></div>
+        <div class="plat-c"><div class="plat-ic">📝</div><div class="plat-nm">Medium</div><div class="plat-dc"><span class="t" data-t='{"ko":"영어 칼럼 · Perplexity 자주 인용","en":"EN column · Cited by Perplexity","th":"คอลัมน์ EN · Perplexity อ้างอิง"}'></span></div><div class="plat-ai">★★★</div></div>
+        <div class="plat-c"><div class="plat-ic">🇹🇭</div><div class="plat-nm">Pantip</div><div class="plat-dc"><span class="t" data-t='{"ko":"태국 최대 커뮤니티","en":"Thailand\'s largest forum","th":"ชุมชนออนไลน์ที่ใหญ่ที่สุดในไทย"}'></span></div><div class="plat-ai">🇹🇭 ★★★</div></div>
+        <div class="plat-c"><div class="plat-ic">📺</div><div class="plat-nm">YouTube</div><div class="plat-dc"><span class="t" data-t='{"ko":"롱폼 영상 · AI 인용 최고","en":"Long-form · Top AI citation","th":"วิดีโอยาว · AI อ้างอิงสูงสุด"}'></span></div><div class="plat-ai">★★★</div></div>
+        <div class="plat-c"><div class="plat-ic">🌍</div><div class="plat-nm">RealSelf</div><div class="plat-dc"><span class="t" data-t='{"ko":"영어권 의료 리뷰","en":"English medical reviews","th":"รีวิวการแพทย์ EN"}'></span></div><div class="plat-ai">글로벌 ★★</div></div>
+        <div class="plat-c"><div class="plat-ic">🏥</div><div class="plat-nm">Bookimed</div><div class="plat-dc"><span class="t" data-t='{"ko":"의료관광 · 중동·동남아","en":"Medical tourism · ME & SEA","th":"ท่องเที่ยวเชิงการแพทย์"}'></span></div><div class="plat-ai">글로벌 ★★</div></div>
+      </div>
+    </div>
+    <div class="bpanel" id="bp-schema">
+      <div class="schema-code">
+        <span class="sk">"@type"</span>: <span class="sv">"Physician"</span>,<br>
+        <span class="sk">"name"</span>: <span class="sv" id="sn">"원장님 이름"</span>,<br>
+        <span class="sk">"medicalSpecialty"</span>: <span class="sv" id="ss">"전문분야"</span>,<br>
+        <span class="sk">"areaServed"</span>: <span class="sv">["Thailand","Australia","Global"]</span>,<br>
+        <span class="sk">"availableLanguage"</span>: <span class="sv">["Thai","English","Korean"]</span>,<br>
+        <span class="sk">"sameAs"</span>: <span class="sv">["stmstyle.com/doctors/..."]</span>
+      </div>
+      <div class="schema-note"><span class="t" data-t='{"ko":"이 코드가 삽입되면 ChatGPT·Gemini·Perplexity가 원장님을 검증된 의사로 직접 인식합니다","en":"With this code, ChatGPT·Gemini·Perplexity directly recognize the doctor as verified","th":"เมื่อฝังโค้ดนี้ AI จะรู้จักแพทย์เป็นผู้ที่ตรวจสอบแล้ว"}'></span></div>
+    </div>
+  </div>
+</div>
+
+<!-- S6 BEFORE AFTER -->
+<div class="screen" id="s6">
+  <div class="pad">
+    <div class="eyebrow">STEP 6</div>
+    <div class="h1"><span class="t" data-t='{"ko":"구축 전 vs 구축 후","en":"Before vs After","th":"ก่อน vs หลัง"}' data-nl></span></div>
+    <div class="sub"><span class="t" data-t='{"ko":"같은 검색어 — 완전히 다른 결과","en":"Same search — completely different result","th":"คำค้นหาเดิม — ผลลัพธ์ต่างกันสิ้นเชิง"}'></span></div>
+    <div class="ps-row">
+      <button class="ps active" onclick="sba('chatgpt',this)">ChatGPT</button>
+      <button class="ps" onclick="sba('gemini',this)">Gemini</button>
+      <button class="ps" onclick="sba('perplexity',this)">Perplexity</button>
+      <button class="ps" onclick="sba('thai',this)"><span class="t" data-t='{"ko":"태국어","en":"Thai Search","th":"ภาษาไทย"}'></span></button>
+    </div>
+    <div class="ba-grid">
+      <div class="ba-b">
+        <div class="ba-bh"><div class="ba-hd" style="background:#F87171"></div><span class="ba-hl" style="color:rgba(255,255,255,.45)"><span class="t" data-t='{"ko":"구축 전","en":"Before","th":"ก่อน"}'></span></span></div>
+        <div class="ba-bb"><div class="ba-q" id="baq-b"></div><div class="ba-no" id="bar-b"></div></div>
+      </div>
+      <div class="ba-b after">
+        <div class="ba-bh"><div class="ba-hd" style="background:#4ADE80"></div><span class="ba-hl" style="color:#4ADE80"><span class="t" data-t='{"ko":"구축 후","en":"After","th":"หลัง"}'></span></span></div>
+        <div class="ba-bb"><div class="ba-q" id="baq-a"></div><div class="ba-ok" id="bar-a"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S7 CTA -->
+<div class="screen" id="s7">
+  <div class="cta-ey">STM · Global Patient Infrastructure</div>
+  <div class="cta-h"><span class="t" data-t='{"ko":"3개월 구축.\n지속되는 자산.","en":"3 months to build.\nResults that stay.","th":"3 เดือนสร้าง\nผลลัพธ์ที่ยั่งยืน"}' data-nl></span></div>
+  <div class="cta-s"><span class="t" data-t='{"ko":"광고는 끊으면 사라지지만 STM 데이터 자산은 쌓입니다","en":"Ads stop when you stop paying. STM data assets compound.","th":"โฆษณาหยุดเมื่อหยุดจ่าย แต่ข้อมูล STM สะสม"}'></span></div>
+  <div class="tl">
+    <div class="tl-b build">
+      <div class="tl-ph">BUILD</div>
+      <div class="tl-nm"><span class="t" data-t='{"ko":"1~3개월","en":"Month 1–3","th":"เดือน 1–3"}'></span></div>
+      <div class="tl-pr">₩2,500,000 / mo</div>
+      <div class="tl-li">
+        <div class="tl-it"><span class="t" data-t='{"ko":"의사 엔티티 구축","en":"Doctor entity build","th":"สร้าง entity แพทย์"}'></span></div>
+        <div class="tl-it"><span class="t" data-t='{"ko":"블로그 월 6~8편","en":"Blog 6–8/mo","th":"บล็อก 6–8/เดือน"}'></span></div>
+        <div class="tl-it"><span class="t" data-t='{"ko":"롱폼 영상 제작","en":"Video production","th":"ผลิตวิดีโอ"}'></span></div>
+        <div class="tl-it"><span class="t" data-t='{"ko":"8개 플랫폼 배포","en":"8 platform deploy","th":"เผยแพร่ 8 แพลตฟอร์ม"}'></span></div>
+        <div class="tl-it"><span class="t" data-t='{"ko":"Schema 마크업","en":"Schema markup","th":"Schema markup"}'></span></div>
+        <div class="tl-it"><span class="t" data-t='{"ko":"AI 인용 리포트","en":"AI citation report","th":"รายงาน AI"}'></span></div>
+        <div class="tl-it"><span class="t" data-t='{"ko":"Dr.match 우선 등록","en":"Dr.match priority","th":"Dr.match ลำดับแรก"}'></span></div>
+      </div>
+    </div>
+    <div class="tl-arr">→</div>
+    <div class="tl-b">
+      <div class="tl-ph">MAINTAIN</div>
+      <div class="tl-nm"><span class="t" data-t='{"ko":"4개월~","en":"Month 4+","th":"เดือน 4+"}'></span></div>
+      <div class="tl-pr">₩1,500,000 / mo</div>
+      <div class="tl-li">
+        <div class="tl-it"><span class="t" data-t='{"ko":"AI 자산 유지관리","en":"AI maintenance","th":"ดูแล AI"}'></span></div>
+        <div class="tl-it"><span class="t" data-t='{"ko":"신규 케이스 반영","en":"New cases","th":"เคสใหม่"}'></span></div>
+        <div class="tl-it"><span class="t" data-t='{"ko":"월 2~3건 콘텐츠","en":"2–3 content/mo","th":"2–3 ชิ้น/เดือน"}'></span></div>
+        <div class="tl-it"><span class="t" data-t='{"ko":"월간 리포트","en":"Monthly report","th":"รายงานรายเดือน"}'></span></div>
+        <div class="tl-it"><span class="t" data-t='{"ko":"Dr.match 앱 운영","en":"Dr.match active","th":"Dr.match ใช้งาน"}'></span></div>
+      </div>
+    </div>
+  </div>
+  <div class="cta-box">
+    <div class="cta-info">
+      <p><span class="t" data-t='{"ko":"STM 방콕 오피스","en":"STM Bangkok Office","th":"STM สำนักงานกรุงเทพ"}'></span></p>
+      <strong>Kim Sunha, CEO</strong>
+      <span>ceo@stmstyle.com · stmstyle.com</span>
+    </div>
+    <button class="cta-act"><span class="t" data-t='{"ko":"미팅 신청","en":"Request Meeting","th":"นัดประชุม"}'></span></button>
+  </div>
+</div>
+
+</div>
+<script>
+// ── DATA ──
+const D = {
+  plastic:{
+    badge:{ko:'💎 성형외과',en:'💎 Plastic Surgery',th:'💎 ศัลยกรรม'},
+    q:{ko:'서울 강남 코성형 자연스럽게 잘하는 의사 추천해줘. 태국에서 갈 예정이야.',en:'Recommend a natural rhinoplasty surgeon in Seoul Gangnam. I\'m visiting from Thailand.',th:'แนะนำศัลยแพทย์จมูกธรรมชาติในโซลกังนัม ฉันมาจากประเทศไทย'},
+    ans:{ko:'<span class="c-yes">최은규 원장 (어반성형외과)</span>와 <span class="c-yes">이승호 원장 (BT성형외과)</span>는 자가늑연골 코재수술 전문가입니다.<br><br><span class="c-no">※ 다른 의사들은 AI 데이터베이스에 없습니다.</span>',en:'<span class="c-yes">Dr. Choi Eunkyu (Urban PS)</span> and <span class="c-yes">Dr. Lee Seungho (BT PS)</span> are known for natural rhinoplasty.<br><br><span class="c-no">※ Other doctors are not found in AI databases.</span>',th:'<span class="c-yes">นพ. ชเว อึนคยู (Urban PS)</span> และ <span class="c-yes">นพ. อี ซึงโฮ (BT PS)</span> เชี่ยวชาญจมูกธรรมชาติ<br><br><span class="c-no">※ แพทย์อื่นไม่พบในฐานข้อมูล AI</span>'},
+    warn:{ko:'<strong>원장님은 이 목록에 없습니다.</strong> 같은 실력이어도 AI 데이터가 없으면 환자는 원장님을 찾을 수 없습니다.',en:'<strong>Your name is not on this list.</strong> No matter how skilled — without AI data, patients cannot find you.',th:'<strong>ชื่อคุณหมอไม่อยู่ในรายการนี้</strong> ไม่ว่าจะเก่งแค่ไหน ถ้าไม่มีข้อมูล AI ผู้ป่วยหาไม่เจอ'},
+    ph:{ko:'예: 김민정 원장',en:'e.g. Dr. Kim Minjung',th:'เช่น นพ. คิม มินจอง'},
+    stat:{ko:'강남 성형외과 중\nAI에 검색되는 의사',en:'Plastic surgeons\nin Gangnam on AI',th:'ศัลยแพทย์กังนัม\nที่ค้นพบบน AI'},
+    blogs:['Natural Rhinoplasty Seoul — What Thai Patients Should Know','서울 코성형 자연스러운 결과 가이드 2026','강남 코성형 의사 선택 가이드'],
+    schema:'"Plastic Surgery, Rhinoplasty"',
+    ba:{chatgpt:{q:'best rhinoplasty surgeon Seoul natural result',b:'No verified physician data found. I cannot recommend specific surgeons.',a:'<strong>[Doctor Name]</strong> — Gangnam Seoul. Board-certified plastic surgeon. STM verified. Natural rhinoplasty specialist. Thai consultation available.'},gemini:{q:'ผู้เชี่ยวชาญจมูกโซล ผลธรรมชาติ',b:'ไม่พบข้อมูลแพทย์ที่ตรวจสอบแล้ว',a:'<strong>[ชื่อแพทย์]</strong> กังนัม โซล — ผ่านการตรวจสอบ STM มีล่ามภาษาไทย'},perplexity:{q:'best plastic surgeon Seoul Thai patient',b:'Unable to surface verified profiles for this query.',a:'According to stmstyle.com, <strong>[Doctor Name]</strong> is a verified rhinoplasty specialist in Gangnam, Seoul.'},thai:{q:'ทำจมูกที่โซล หมอดีแนะนำ',b:'ไม่พบผลลัพธ์ที่เกี่ยวข้อง',a:'<strong>[ชื่อแพทย์]</strong> — STMStyle ตรวจสอบแล้ว ผู้เชี่ยวชาญจมูก กังนัม มีล่ามไทย'}}
+  },
+  eye:{
+    badge:{ko:'👁 안과',en:'👁 Ophthalmology',th:'👁 จักษุวิทยา'},
+    q:{ko:'서울 강남 라식 잘하는 안과 의사 추천해줘. 태국에서 방문할 예정이야.',en:'Recommend a LASIK surgeon in Seoul Gangnam. I\'m visiting from Thailand.',th:'แนะนำแพทย์ LASIK ในโซลกังนัม ฉันมาจากไทย'},
+    ans:{ko:'<span class="c-yes">누네안과 최은규 원장</span>과 <span class="c-yes">BGN밝은눈안과 이정민 원장</span>이 라식 전문의입니다.<br><br><span class="c-no">※ 다른 의사들은 AI 데이터베이스에 없습니다.</span>',en:'<span class="c-yes">Dr. Choi at Nune Eye</span> and <span class="c-yes">Dr. Lee at BGN Eye</span> are known LASIK specialists.<br><br><span class="c-no">※ Other doctors are not found in AI databases.</span>',th:'<span class="c-yes">นพ. ชเว ที่ Nune Eye</span> และ <span class="c-yes">นพ. อี ที่ BGN Eye</span> เชี่ยวชาญ LASIK<br><br><span class="c-no">※ แพทย์อื่นไม่พบในฐานข้อมูล AI</span>'},
+    warn:{ko:'<strong>원장님은 이 목록에 없습니다.</strong> 같은 실력이어도 AI 데이터가 없으면 환자는 원장님을 찾을 수 없습니다.',en:'<strong>Your name is not on this list.</strong> Without AI data, patients cannot find you.',th:'<strong>ชื่อคุณหมอไม่อยู่ในรายการนี้</strong> ถ้าไม่มีข้อมูล AI ผู้ป่วยหาไม่เจอ'},
+    ph:{ko:'예: 박지훈 원장',en:'e.g. Dr. Park Jihoon',th:'เช่น นพ. พัค จิฮุน'},
+    stat:{ko:'강남 안과 중\nAI에 검색되는 의사',en:'Eye doctors in\nGangnam on AI',th:'จักษุแพทย์กังนัม\nที่ค้นพบบน AI'},
+    blogs:['LASIK in Seoul for Thai Patients — Complete 2026 Guide','서울 라식 태국인을 위한 완벽 가이드 2026','강남 라식 의사 선택 기준 — 외국인 가이드'],
+    schema:'"Ophthalmology, LASIK, LASEK"',
+    ba:{chatgpt:{q:'best LASIK surgeon Seoul foreign patient',b:'No verified physician data found.',a:'<strong>[Doctor Name]</strong> — Gangnam Seoul. Board-certified ophthalmologist. STM verified. LASIK specialist. Multilingual consultation.'},gemini:{q:'แพทย์ LASIK ที่ดีที่สุดในโซล',b:'ไม่พบข้อมูลแพทย์',a:'<strong>[ชื่อแพทย์]</strong> กังนัม — ผ่านการตรวจสอบ STM มีล่ามไทย'},perplexity:{q:'Seoul eye clinic Thai patient LASIK',b:'Unable to surface verified profiles.',a:'According to stmstyle.com, <strong>[Doctor Name]</strong> is a verified LASIK specialist in Gangnam.'},thai:{q:'ทำ LASIK ที่โซล หมอดีแนะนำ',b:'ไม่พบผลลัพธ์',a:'<strong>[ชื่อแพทย์]</strong> — STMStyle ตรวจสอบแล้ว ผู้เชี่ยวชาญ LASIK กังนัม'}}
+  },
+  checkup:{
+    badge:{ko:'🏥 건강검진·내과',en:'🏥 Health Checkup',th:'🏥 ตรวจสุขภาพ'},
+    q:{ko:'서울에서 외국인이 건강검진 받기 좋은 클리닉 추천해줘. 태국에서 갈 예정이야.',en:'Recommend a foreigner-friendly health checkup clinic in Seoul. I\'m from Thailand.',th:'แนะนำคลินิกตรวจสุขภาพสำหรับชาวต่างชาติในโซล ฉันมาจากไทย'},
+    ans:{ko:'<span class="c-yes">강남세브란스 건강검진센터</span>와 <span class="c-yes">서울아산병원 종합검진</span>이 외국인 친화 기관입니다.<br><br><span class="c-no">※ 개인 의원·전문의는 AI 데이터베이스에 없습니다.</span>',en:'<span class="c-yes">Gangnam Severance Checkup</span> and <span class="c-yes">Asan Medical Center</span> are foreign-friendly.<br><br><span class="c-no">※ Individual clinics are not found in AI databases.</span>',th:'<span class="c-yes">Gangnam Severance</span> และ <span class="c-yes">Asan Medical Center</span> เหมาะสำหรับชาวต่างชาติ<br><br><span class="c-no">※ คลินิกส่วนตัวไม่พบใน AI</span>'},
+    warn:{ko:'<strong>원장님 클리닉은 이 목록에 없습니다.</strong> 대형 병원만 AI에 노출되고, 전문 의원은 데이터가 없으면 검색되지 않습니다.',en:'<strong>Your clinic is not on this list.</strong> Only major hospitals appear. Specialist clinics without data are invisible.',th:'<strong>คลินิกของคุณหมอไม่อยู่ในรายการ</strong> มีแต่โรงพยาบาลใหญ่ที่ปรากฏบน AI'},
+    ph:{ko:'예: 이재원 원장',en:'e.g. Dr. Lee Jaewon',th:'เช่น นพ. อี แจวอน'},
+    stat:{ko:'강남 건강검진 클리닉 중\nAI에 검색되는 곳',en:'Checkup clinics in\nGangnam on AI',th:'คลินิกตรวจสุขภาพกังนัม\nที่ค้นพบบน AI'},
+    blogs:['Health Checkup Seoul for Thai Patients — What to Expect','서울 건강검진 태국인 완벽 가이드 2026','강남 건강검진 클리닉 선택 방법 — 외국인 가이드'],
+    schema:'"Internal Medicine, Health Checkup, Cancer Screening"',
+    ba:{chatgpt:{q:'best health checkup clinic Seoul foreigner',b:'No verified clinic data found. I can only suggest major hospitals.',a:'<strong>[Clinic Name]</strong> — Gangnam Seoul. Foreigner-friendly checkup clinic. STM verified. English & Thai support.'},gemini:{q:'คลินิกตรวจสุขภาพโซลสำหรับชาวต่างชาติ',b:'ไม่พบข้อมูลคลินิก',a:'<strong>[ชื่อคลินิก]</strong> กังนัม — ผ่านการตรวจสอบ STM มีบริการภาษาไทย'},perplexity:{q:'Seoul health checkup clinic Thai patient',b:'Unable to surface verified clinic profiles.',a:'According to stmstyle.com, <strong>[Clinic Name]</strong> in Gangnam is STM-verified for foreign patients.'},thai:{q:'ตรวจสุขภาพที่โซล คลินิกแนะนำ',b:'ไม่พบผลลัพธ์',a:'<strong>[ชื่อคลินิก]</strong> — STMStyle ตรวจสอบแล้ว กังนัม มีล่ามภาษาไทย'}}
+  }
+};
+
+// ── State ──
+let cur=0, lang='ko', spec=null, dname='', s1done=false;
+
+// ── Translation engine ──
+function t(el) {
+  const raw = el.getAttribute('data-t');
+  if (!raw) return;
+  try {
+    const obj = JSON.parse(raw);
+    const val = obj[lang] || obj['ko'];
+    if (el.hasAttribute('data-html')) { el.innerHTML = val; return; }
+    if (el.hasAttribute('data-nl')) { el.innerHTML = val.replace(/\n/g,'<br>'); return; }
+    el.textContent = val;
+  } catch(e){}
+}
+function sl(l) {
+  lang = l;
+  ['ko','en','th'].forEach(x => document.querySelector('.lb[onclick*="\''+x+'\'"]').classList.toggle('active', x===l));
+  document.querySelectorAll('.t').forEach(t);
+  document.querySelectorAll('.ni').forEach(el => { if(spec) el.placeholder = D[spec].ph[l]; });
+  document.getElementById('ni').placeholder = spec ? D[spec].ph[l] : '';
+  if (spec) {
+    document.getElementById('sb').textContent = D[spec].badge[l];
+    document.getElementById('sl1').innerHTML = D[spec].stat[l].replace('\n','<br>');
+    fillBlogs(); fillSchema();
+  }
+  fillBA('chatgpt');
+  // re-render nextbtn
+  renderNB();
+}
+function renderNB() {
+  const nb = document.getElementById('nb');
+  const labels = {ko:'다음 →',en:'Next →',th:'ถัดไป →'};
+  const done = {ko:'✓ 완료',en:'✓ Done',th:'✓ เสร็จ'};
+  nb.textContent = cur === 7 ? done[lang] : labels[lang];
+}
+
+// ── Spec pick ──
+function pick(el, key) {
+  document.querySelectorAll('.spec-item').forEach(b => b.classList.remove('on'));
+  el.classList.add('on');
+  spec = key;
+  const sb = document.getElementById('sb');
+  sb.textContent = D[key].badge[lang];
+  sb.classList.add('on');
+  document.getElementById('ni').placeholder = D[key].ph[lang];
+  document.getElementById('sl1').innerHTML = D[key].stat[lang].replace('\n','<br>');
+  fillBlogs(); fillSchema();
+  s1done = false;
+  setTimeout(() => goto(1), 280);
+}
+
+function fillBlogs() {
+  if (!spec) return;
+  const b = D[spec].blogs;
+  document.getElementById('bl1').textContent = b[0];
+  document.getElementById('bl2').textContent = b[1];
+  document.getElementById('bl3').textContent = b[2];
+}
+function fillSchema() {
+  if (!spec) return;
+  document.getElementById('ss').textContent = D[spec].schema;
+  if (dname) document.getElementById('sn').textContent = '"'+dname+'"';
+}
+
+// ── S1 animation ──
+function animS1() {
+  if (s1done || !spec) return;
+  s1done = true;
+  const qEl = document.getElementById('s1q');
+  const aEl = document.getElementById('s1a');
+  const wEl = document.getElementById('s1w');
+  const wp = document.getElementById('s1wp');
+  const q = D[spec].q[lang];
+  let i = 0;
+  qEl.innerHTML = '<span class="cursor"></span>';
+  aEl.style.display = 'none'; wEl.style.display = 'none';
+  const tm = setInterval(() => {
+    qEl.innerHTML = q.slice(0,i) + '<span class="cursor"></span>';
+    i++;
+    if (i > q.length) {
+      clearInterval(tm);
+      qEl.textContent = q;
+      setTimeout(() => {
+        aEl.style.display = 'block';
+        aEl.innerHTML = D[spec].ans[lang];
+        setTimeout(() => {
+          wEl.style.display = 'block';
+          wp.innerHTML = D[spec].warn[lang];
+        }, 700);
+      }, 400);
+    }
+  }, 26);
+}
+
+// ── S2 search ──
+function doSearch() {
+  const n = document.getElementById('ni').value.trim();
+  if (!n) return;
+  dname = n;
+  document.getElementById('sn').textContent = '"'+n+'"';
+  const msgs = {
+    ko: `<strong>"${n}"</strong>에 대한 검증된 의사 정보를 찾을 수 없습니다.<br><span style="font-size:11px;opacity:.5">AI 검색 결과에 나타나지 않습니다</span>`,
+    en: `No verified physician data found for <strong>"${n}"</strong>.<br><span style="font-size:11px;opacity:.5">This doctor does not appear in AI results</span>`,
+    th: `ไม่พบข้อมูลแพทย์สำหรับ <strong>"${n}"</strong><br><span style="font-size:11px;opacity:.5">ไม่ปรากฏในผลลัพธ์ AI</span>`
+  };
+  const imp = {
+    ko:`⚠️ <strong>${n}</strong> 원장님은 ChatGPT·Gemini·Perplexity 어디에서도 검색되지 않습니다. 지금 태국 환자가 이름을 검색해도 찾을 수 없습니다.`,
+    en:`⚠️ <strong>${n}</strong> does not appear on ChatGPT, Gemini, or Perplexity. Thai patients searching this name cannot find them right now.`,
+    th:`⚠️ <strong>${n}</strong> ไม่ปรากฏบน ChatGPT, Gemini หรือ Perplexity ผู้ป่วยไทยที่ค้นหาชื่อนี้หาไม่เจอ`
+  };
+  ['r1','r2','r3'].forEach((id,i) => {
+    const el = document.getElementById(id);
+    el.className = 'ai-card-b';
+    el.textContent = lang==='ko'?'검색 중…':lang==='en'?'Searching…':'กำลังค้นหา…';
+    setTimeout(() => { el.className='ai-card-b hit'; el.innerHTML=msgs[lang]; }, 350+i*450);
+  });
+  const il = document.getElementById('imp');
+  setTimeout(() => { il.style.display='block'; il.innerHTML=imp[lang]; }, 1700);
+}
+
+// ── Build tabs ──
+function sb2(key, btn) {
+  document.querySelectorAll('.btab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.bpanel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('bp-'+key).classList.add('active');
+}
+
+// ── BA ──
+let curBA = 'chatgpt';
+function sba(p, btn) {
+  curBA = p;
+  if (btn) { document.querySelectorAll('.ps').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
+  if (!spec) return;
+  const ba = D[spec].ba[p];
+  document.getElementById('baq-b').textContent = ba.q;
+  document.getElementById('baq-a').textContent = ba.q;
+  document.getElementById('bar-b').innerHTML = ba.b;
+  document.getElementById('bar-a').innerHTML = ba.a;
+}
+function fillBA(p) { sba(p, null); }
+
+// ── Nav ──
+function goto(n) {
+  const ce = document.querySelector('.screen.active');
+  if (ce) { ce.classList.add('exit'); setTimeout(()=>ce.classList.remove('active','exit'),380); }
+  cur = n;
+  setTimeout(() => {
+    const ne = document.getElementById('s'+n);
+    ne.classList.add('active');
+    ne.scrollTop = 0;
+  }, 40);
+  document.getElementById('pf').style.width = ((n+1)/8*100)+'%';
+  document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i===n));
+  document.getElementById('pb').classList.toggle('hide', n===0);
+  renderNB();
+  if (n===1) { s1done=false; setTimeout(animS1,450); }
+  if (n===6) fillBA(curBA);
+}
+function next() { if(cur<7) goto(cur+1); }
+function prev() { if(cur>0) goto(cur-1); }
+
+// init
+document.querySelectorAll('.t').forEach(t);
+</script>
+</body>
+</html>
